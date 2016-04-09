@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+import os
 
 try:
     from setuptools import setup
@@ -14,13 +14,26 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [
-    # TODO: put package requirements here
-]
+def get_requirements(file_name='requirements.txt'):
+    try:
+        filename = open(file_name)
+        lines = [i.strip() for i in filename.readlines()]
+        filename.close()
+    except:
+        return []
 
-test_requirements = [
-    # TODO: put package test requirements here
-]
+    return lines
+
+
+def read(fname):
+    try:
+        return open(os.path.join(os.path.dirname(__file__), fname)).read()
+    except:
+        return ''
+
+requirements = get_requirements()
+
+test_requirements = []
 
 setup(
     name='stalkr',
