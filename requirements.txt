@@ -1,3 +1,4 @@
 celery
 py2neo
 requests
+pymongo
