@@ -1,4 +1,17 @@
 #!/bin/bash
+
+# install Python 2.7 if needed
+if [ ! -f $OPENSHIFT_DATA_DIR/bin/python ]; then
+    echo "Installing Python 2.7..."
+    rm -rf $OPENSHIFT_DATA_DIR/*
+    cd $OPENSHIFT_TMP_DIR
+    wget http://python.org/ftp/python/2.7.3/Python-2.7.3.tar.bz2
+    tar jxf Python-2.7.3.tar.bz2
+    cd Python-2.7.3/
+    ./configure --prefix=$OPENSHIFT_DATA_DIR
+    make install
+fi
+
 VIRTENV_HOME=$OPENSHIFT_DEPENDENCIES_DIR/virtualenv/
 
 echo "Installing dependencies..."
@@ -9,7 +22,7 @@ if [ -d $VIRTENV_HOME ]; then
 fi
 
 # Create virtualenv and install necessary packages
-virtualenv --no-site-packages $VIRTENV_HOME
+virtualenv -p $OPENSHIFT_DATA_DIR/bin/python --no-site-packages $VIRTENV_HOME
 source $VIRTENV_HOME/bin/activate
 
 #install dependencies
