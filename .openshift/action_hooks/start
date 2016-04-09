@@ -1,0 +1,7 @@
+#!/bin/bash
+VIRTENV_HOME=$OPENSHIFT_DEPENDENCIES_DIR/virtualenv/
+echo "Running app..."
+source $VIRTENV_HOME/bin/activate
+#nohup imgr --host=${OPENSHIFT_DIY_IP} --port=${OPENSHIFT_DIY_PORT} --mongodb_url=${MONGODB_URL} > ${OPENSHIFT_DIY_LOG_DIR}/imgr.log 2>&1 &
+nohup celery -A stalkr.tasks worker --loglevel=info > ${OPENSHIFT_DIY_LOG_DIR}/celery_worker.log 2>&1 &
+nohup celery -A stalkr.tasks beat --loglevel=info -s ${OPENSHIFT_TMP_DIR}/celerybeat-schedule > ${OPENSHIFT_DIY_LOG_DIR}/celery_beat.log 2>&1 &
