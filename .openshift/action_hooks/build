@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# install Python 2.7 if needed
+# install Python 2.7
 if [ ! -f $OPENSHIFT_DATA_DIR/bin/python ]; then
     echo "Installing Python 2.7..."
     rm -rf $OPENSHIFT_DATA_DIR/*
