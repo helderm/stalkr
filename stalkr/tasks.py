@@ -9,9 +9,16 @@ from celery.utils.log import get_task_logger
 # init celery
 logger = get_task_logger(__name__)
 mongodb_url = os.getenv('MONGODB_URL', 'mongodb://localhost:27017/')
+logger.info('Initializing Celery using [{}] as a broker...', mongodb_url + 'celery')
 app = Celery(include=[ 'stalkr.tasks' ], broker=mongodb_url + 'celery')
 app.config_from_object('stalkr.celeryconfig')
 
+# set up db
+neodb = os.environ.get('OPENSHIFT_NEO4J_DB_HOST', 'localhost')
+neoport = os.environ.get('OPENSHIFT_NEO4J_DB_PORT', '7474')
+logger.info('Connecting to Neo4j at {0}:{1}', neodb, neoport)
+authenticate(neodb + ':' + neoport, "neo4j", "neo4j")
+graph = Graph()
 
 def get_bearer():
     if os.environ.get('TWITTER_BEARER', None) is not None:
@@ -98,14 +105,7 @@ def upload_tweets(tweets, graph):
 def import_tweets():
     TWITTER_BEARER = get_bearer()
 
-    neodb = os.environ.get('OPENSHIFT_NEO4J_DB_HOST', 'localhost')
-    neoport = os.environ.get('OPENSHIFT_NEO4J_DB_PORT', '7474')
-
-    # set up authentication parameters
-    authenticate(neodb + ':' + neoport, "neo4j", "neo4j")
-
     # setup db
-    graph = Graph()
     graph.cypher.execute("CREATE CONSTRAINT ON (u:User) ASSERT u.username IS UNIQUE")
     graph.cypher.execute("CREATE CONSTRAINT ON (t:Tweet) ASSERT t.id IS UNIQUE")
     graph.cypher.execute("CREATE CONSTRAINT ON (h:Hashtag) ASSERT h.name IS UNIQUE")
