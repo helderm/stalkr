@@ -9,14 +9,14 @@ from celery.utils.log import get_task_logger
 # init celery
 logger = get_task_logger(__name__)
 mongodb_url = os.getenv('MONGODB_URL', 'mongodb://localhost:27017/')
-logger.info('Initializing Celery using [{}] as a broker...', mongodb_url + 'celery')
+print('Initializing Celery using [{}] as a broker...', mongodb_url + 'celery')
 app = Celery(include=[ 'stalkr.tasks' ], broker=mongodb_url + 'celery')
 app.config_from_object('stalkr.celeryconfig')
 
 # set up db
-neodb = os.environ.get('OPENSHIFT_NEO4J_DB_HOST', 'localhost')
-neoport = os.environ.get('OPENSHIFT_NEO4J_DB_PORT', '7474')
-logger.info('Connecting to Neo4j at {0}:{1}', neodb, neoport)
+neodb = os.getenv('OPENSHIFT_NEO4J_DB_HOST', 'localhost')
+neoport = os.getenv('OPENSHIFT_NEO4J_DB_PORT', '7474')
+print('Connecting to Neo4j at {0}:{1}', neodb, neoport)
 authenticate(neodb + ':' + neoport, "neo4j", "neo4j")
 graph = Graph()
 
@@ -126,7 +126,7 @@ def import_tweets():
             #since_id = tweets[0].get("id")
             upload_tweets(tweets, graph)
 
-            logger.info("[{}] tweets from trend [{}] uploaded!".format(len(tweets), trend['name']))
+            print("[{}] tweets from trend [{}] uploaded!".format(len(tweets), trend['name']))
 
         except Exception, e:
             logger.exception(e)
