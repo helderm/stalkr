@@ -18,7 +18,7 @@ neodb = os.getenv('OPENSHIFT_NEO4J_DB_HOST', 'localhost')
 neoport = os.getenv('OPENSHIFT_NEO4J_DB_PORT', '7474')
 print('Connecting to Neo4j at {0}:{1}', neodb, neoport)
 authenticate(neodb + ':' + neoport, "neo4j", "neo4j")
-graph = Graph()
+graph = Graph('http://{0}:{1}/db/data/'.format(neodb, neoport))
 
 def get_bearer():
     if os.environ.get('TWITTER_BEARER', None) is not None:
