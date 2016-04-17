@@ -9,14 +9,17 @@ from celery.utils.log import get_task_logger
 # init celery
 logger = get_task_logger(__name__)
 mongodb_url = os.getenv('MONGODB_URL', 'mongodb://localhost:27017/')
-print('Initializing Celery using [{}] as a broker...', mongodb_url + 'celery')
+logger.info('Initializing Celery using [{}] as a broker...', mongodb_url + 'celery')
 app = Celery(include=[ 'stalkr.tasks' ], broker=mongodb_url + 'celery')
-app.config_from_object('stalkr.celeryconfig')
+try:
+    app.config_from_object('stalkr.celeryconfig', force=True)
+except Exception as e:
+    app.config_from_object('celeryconfig', force=True)
 
 # set up db
 neodb = os.getenv('OPENSHIFT_NEO4J_DB_HOST', 'localhost')
-neoport = os.getenv('OPENSHIFT_NEO4J_DB_PORT', '7474')
-print('Connecting to Neo4j at {0}:{1}', neodb, neoport)
+neoport = os.getenv('OPENSHIFT_NEO4J_DB_PORT', '17474')
+logger.info('Connecting to Neo4j at {0}:{1}', neodb, neoport)
 authenticate(neodb + ':' + neoport, "neo4j", "neo4j")
 graph = Graph('http://{0}:{1}/db/data/'.format(neodb, neoport))
 
@@ -40,7 +43,7 @@ def get_bearer():
 
 
 def find_trending_topics(token):
-    woeid = 12 # Where on Earth ID for the USA
+    woeid = 23424977 # Where on Earth ID for the USA
     url = "https://api.twitter.com/1.1/trends/place.json?id={woeid}".format(woeid=woeid)
     headers = dict(accept="application/json", Authorization="Bearer " + token)
 
