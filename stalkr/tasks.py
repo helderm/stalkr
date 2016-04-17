@@ -40,7 +40,8 @@ def get_bearer():
 
 
 def find_trending_topics(token):
-    url = "https://api.twitter.com/1.1/trends/place.json?id=1"
+    woeid = 12 # Where on Earth ID for the USA
+    url = "https://api.twitter.com/1.1/trends/place.json?id={woeid}".format(woeid=woeid)
     headers = dict(accept="application/json", Authorization="Bearer " + token)
 
     r = requests.get(url, headers=headers)
