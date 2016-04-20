@@ -25,11 +25,6 @@ print('Connecting to Neo4j at {0}:{1}', neodb, neoport)
 authenticate(neodb + ':' + neoport, "neo4j", "neo4j")
 graph = Graph('http://{0}:{1}/db/data/'.format(neodb, neoport))
 
-# setup db
-graph.cypher.execute("CREATE CONSTRAINT ON (u:User) ASSERT u.username IS UNIQUE")
-graph.cypher.execute("CREATE CONSTRAINT ON (t:Tweet) ASSERT t.id IS UNIQUE")
-graph.cypher.execute("CREATE CONSTRAINT ON (h:Hashtag) ASSERT h.name IS UNIQUE")
-
 
 def upload_tweets(tweets, graph):
     for t in tweets:
@@ -67,6 +62,10 @@ def upload_tweets(tweets, graph):
 def import_tweets():
     TWITTER_BEARER = tw.get_bearer()
 
+    # setup db
+    graph.cypher.execute("CREATE CONSTRAINT ON (u:User) ASSERT u.username IS UNIQUE")
+    graph.cypher.execute("CREATE CONSTRAINT ON (t:Tweet) ASSERT t.id IS UNIQUE")
+    graph.cypher.execute("CREATE CONSTRAINT ON (h:Hashtag) ASSERT h.name IS UNIQUE")
 
     since_id = -1
 
@@ -158,5 +157,5 @@ def compute_pagerank():
     print('PageRank finished!')
 
 if __name__ == '__main__':
-    compute_pagerank()
-    #import_tweets()
+    #compute_pagerank()
+    import_tweets()
