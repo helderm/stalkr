@@ -8,7 +8,6 @@ from celery.utils.log import get_task_logger
 import twitter as tw
 
 # init celery
-
 logger = get_task_logger(__name__)
 mongodb_url = os.getenv('MONGODB_URL', 'mongodb://localhost:27017/')
 print('Initializing Celery using [{}] as a broker...', mongodb_url + 'celery')
@@ -17,13 +16,6 @@ try:
     app.config_from_object('stalkr.celeryconfig', force=True)
 except Exception as e:
     app.config_from_object('celeryconfig', force=True)
-
-# set up db
-neodb = os.getenv('OPENSHIFT_NEO4J_DB_HOST', 'localhost')
-neoport = os.getenv('OPENSHIFT_NEO4J_DB_PORT', '7474')
-print('Connecting to Neo4j at {0}:{1}', neodb, neoport)
-authenticate(neodb + ':' + neoport, "neo4j", "neo4j")
-graph = Graph('http://{0}:{1}/db/data/'.format(neodb, neoport))
 
 
 def upload_tweets(tweets, graph):
@@ -61,6 +53,13 @@ def upload_tweets(tweets, graph):
 @app.task
 def import_tweets():
     TWITTER_BEARER = tw.get_bearer()
+
+    # set up db
+    neodb = os.getenv('OPENSHIFT_NEO4J_DB_HOST', 'localhost')
+    neoport = os.getenv('OPENSHIFT_NEO4J_DB_PORT', '7474')
+    print('Connecting to Neo4j at {0}:{1}', neodb, neoport)
+    authenticate(neodb + ':' + neoport, "neo4j", "neo4j")
+    graph = Graph('http://{0}:{1}/db/data/'.format(neodb, neoport))
 
     # setup db
     graph.cypher.execute("CREATE CONSTRAINT ON (u:User) ASSERT u.username IS UNIQUE")
@@ -102,9 +101,16 @@ def import_tweets():
 
 @app.task
 def compute_pagerank():
+
+    # set up db
+    neodb = os.getenv('OPENSHIFT_NEO4J_DB_HOST', 'localhost')
+    neoport = os.getenv('OPENSHIFT_NEO4J_DB_PORT', '7474')
+    print('Connecting to Neo4j at {0}:{1}', neodb, neoport)
+    authenticate(neodb + ':' + neoport, "neo4j", "neo4j")
+    graph = Graph('http://{0}:{1}/db/data/'.format(neodb, neoport))
+
     WALKS_PER_USER = 2
     BORED = 0.15
-
     total_steps = 0
     users_count = {}
 
