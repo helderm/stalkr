@@ -19,7 +19,7 @@ except Exception as e:
 
 # set up db
 neodb = os.getenv('OPENSHIFT_NEO4J_DB_HOST', 'localhost')
-neoport = os.getenv('OPENSHIFT_NEO4J_DB_PORT', '17474')
+neoport = os.getenv('OPENSHIFT_NEO4J_DB_PORT', '7474')
 logger.info('Connecting to Neo4j at {0}:{1}', neodb, neoport)
 authenticate(neodb + ':' + neoport, "neo4j", "neo4j")
 graph = Graph('http://{0}:{1}/db/data/'.format(neodb, neoport))
@@ -94,7 +94,7 @@ def import_tweets():
 
         except Exception, e:
             logger.exception(e)
-            time.sleep(10)
+            time.sleep(3)
             continue
 
 @app.task
@@ -147,4 +147,5 @@ def compute_pagerank():
 
 
 if __name__ == '__main__':
-    compute_pagerank()
+    #compute_pagerank()
+    import_tweets()

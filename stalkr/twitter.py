@@ -35,6 +35,8 @@ def find_trending_topics(token):
 
 
 def find_tweets(topic, since_id, token):
+    import urllib as urlb
+
     base_url = "https://api.twitter.com/1.1/search/tweets.json?"
     headers = dict(accept="application/json", Authorization="Bearer " + token)
 
@@ -42,7 +44,7 @@ def find_tweets(topic, since_id, token):
         count=100,
         result_type="recent",
         lang="en",
-        q=topic,
+        q=urlb.quote(topic),
         since_id=since_id
     )
 
