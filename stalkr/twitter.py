@@ -41,7 +41,7 @@ def find_tweets(topic, since_id, token):
     headers = dict(accept="application/json", Authorization="Bearer " + token)
 
     payload = dict(
-        count=100,
+        count=500,
         result_type="recent",
         lang="en",
         q=urlb.quote(topic),

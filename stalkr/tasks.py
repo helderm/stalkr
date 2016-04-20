@@ -1,16 +1,17 @@
 import os
 import time
 import random as rnd
-from py2neo import Graph, Relationship, authenticate
+from py2neo import Node, Graph, Relationship, authenticate
 from celery import Celery
 from celery.utils.log import get_task_logger
 
 import twitter as tw
 
 # init celery
+
 logger = get_task_logger(__name__)
 mongodb_url = os.getenv('MONGODB_URL', 'mongodb://localhost:27017/')
-logger.info('Initializing Celery using [{}] as a broker...', mongodb_url + 'celery')
+print('Initializing Celery using [{}] as a broker...', mongodb_url + 'celery')
 app = Celery(include=[ 'stalkr.tasks' ], broker=mongodb_url + 'celery')
 try:
     app.config_from_object('stalkr.celeryconfig', force=True)
@@ -20,9 +21,15 @@ except Exception as e:
 # set up db
 neodb = os.getenv('OPENSHIFT_NEO4J_DB_HOST', 'localhost')
 neoport = os.getenv('OPENSHIFT_NEO4J_DB_PORT', '7474')
-logger.info('Connecting to Neo4j at {0}:{1}', neodb, neoport)
+print('Connecting to Neo4j at {0}:{1}', neodb, neoport)
 authenticate(neodb + ':' + neoport, "neo4j", "neo4j")
 graph = Graph('http://{0}:{1}/db/data/'.format(neodb, neoport))
+
+# setup db
+graph.cypher.execute("CREATE CONSTRAINT ON (u:User) ASSERT u.username IS UNIQUE")
+graph.cypher.execute("CREATE CONSTRAINT ON (t:Tweet) ASSERT t.id IS UNIQUE")
+graph.cypher.execute("CREATE CONSTRAINT ON (h:Hashtag) ASSERT h.name IS UNIQUE")
+
 
 def upload_tweets(tweets, graph):
     for t in tweets:
@@ -60,10 +67,6 @@ def upload_tweets(tweets, graph):
 def import_tweets():
     TWITTER_BEARER = tw.get_bearer()
 
-    # setup db
-    graph.cypher.execute("CREATE CONSTRAINT ON (u:User) ASSERT u.username IS UNIQUE")
-    graph.cypher.execute("CREATE CONSTRAINT ON (t:Tweet) ASSERT t.id IS UNIQUE")
-    graph.cypher.execute("CREATE CONSTRAINT ON (h:Hashtag) ASSERT h.name IS UNIQUE")
 
     since_id = -1
 
@@ -88,32 +91,32 @@ def import_tweets():
                 continue
 
             #since_id = tweets[0].get("id")
+            print('Uploading [{0}] tweets from hash [{1}]...'.format(len(tweets), hash))
             upload_tweets(tweets, graph)
 
-            print("[{}] tweets from trend [{}] uploaded!".format(len(tweets), trend['name']))
+            print("[{}] tweets from hash [{}] uploaded!".format(len(tweets), hash))
 
         except Exception, e:
-            logger.exception(e)
+            print(e)
             time.sleep(3)
             continue
 
 @app.task
 def compute_pagerank():
-    WALKS_PER_USER = 1
+    WALKS_PER_USER = 2
     BORED = 0.15
 
     total_steps = 0
     users_count = {}
 
-    # get the count of users in the db
-    total_users = graph.cypher.execute('MATCH (n:User) RETURN DISTINCT count(n)')
-    total_users = total_users[0]['count(n)']
-
     # for each user of the db
     for wlk in range(WALKS_PER_USER):
-        for user in graph.find(label='User'):
+        print('Intializing walk #{0}'.format(wlk))
+        for i, user in enumerate(graph.find(label='User')):
             username = user['username']
-            print('User = ' + username)
+
+            if i % 100 == 0:
+                print('[{0}] users ranked, [{1}] steps taken so far...'.format(i, total_steps))
 
             while True:
                 total_steps += 1
@@ -123,16 +126,15 @@ def compute_pagerank():
 
                 users_count[username] += 1
 
+                # stop following users if im bored
                 if rnd.random() < BORED:
                     break
 
-                # stop following users if im bored
+                # get all tweets with mentions
                 mentions = []
-                query = 'MATCH (u:User \{username: {0}\})-[p:POSTS]->(t:Tweet)-[r:MENTIONS]->(n:User) RETURN n'\
-                            .format(username)
-
+                query = 'MATCH (u:User {{username: \'{0}\'}})-[p:POSTS]->(t:Tweet)-[r:MENTIONS]->(n:User) RETURN n'.format(username)
                 for mention in graph.cypher.execute(query):
-                    mentions.add(mention['username'])
+                    mentions.append(mention['n']['username'])
 
                 # if it is a sink, jump!
                 if len(mentions) == 0:
@@ -140,12 +142,21 @@ def compute_pagerank():
                     username = graph.cypher.execute(query)[0]['u']['username']
                     continue
 
-                # get all tweets with mentions
+                # choose another mentioned user randomly
+                username = rnd.choice(mentions)
 
+    print('Saving [{0}] ranks into the db...'.format(len(users_count)))
+    for username, count in users_count.iteritems():
+        rank = count / float(total_steps)
 
-                # following a user mention with equal probability
+        query = 'MATCH (u:User {{username: \'{0}\'}}) RETURN u'.format(username)
+        user = graph.cypher.execute(query)
+        user = user[0]['u']
+        user['rank'] = rank
+        user.push()
 
+    print('PageRank finished!')
 
 if __name__ == '__main__':
-    #compute_pagerank()
-    import_tweets()
+    compute_pagerank()
+    #import_tweets()
