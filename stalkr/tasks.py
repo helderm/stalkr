@@ -1,10 +1,11 @@
 import os
 import time
-import requests
+import random as rnd
 from py2neo import Graph, Relationship, authenticate
-
 from celery import Celery
 from celery.utils.log import get_task_logger
+
+import twitter as tw
 
 # init celery
 logger = get_task_logger(__name__)
@@ -22,56 +23,6 @@ neoport = os.getenv('OPENSHIFT_NEO4J_DB_PORT', '17474')
 logger.info('Connecting to Neo4j at {0}:{1}', neodb, neoport)
 authenticate(neodb + ':' + neoport, "neo4j", "neo4j")
 graph = Graph('http://{0}:{1}/db/data/'.format(neodb, neoport))
-
-def get_bearer():
-    if os.environ.get('TWITTER_BEARER', None) is not None:
-        return os.environ.get('TWITTER_BEARER')
-
-    # base64 encoded key and secret
-    basic = 'M2NWQ0xYdHF3bzdSc3RPcTY4VWNLUFI0SjpHSktwVlYzU2UxTzdwYm9aMFcyeWFZNHJJWVRFNDVWQVF6WktjV203eWE3VzJLejRMZw=='
-
-    url = 'https://api.twitter.com/oauth2/token'
-    headers = {'Authorization': 'Basic ' + basic,
-               'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'}
-    body = {'grant_type': 'client_credentials'}
-
-    ret = requests.post(url, data=body, headers=headers)
-
-    bearer = ret.json()['access_token']
-    os.environ['TWITTER_BEARER'] = str(bearer)
-    return bearer
-
-
-def find_trending_topics(token):
-    woeid = 23424977 # Where on Earth ID for the USA
-    url = "https://api.twitter.com/1.1/trends/place.json?id={woeid}".format(woeid=woeid)
-    headers = dict(accept="application/json", Authorization="Bearer " + token)
-
-    r = requests.get(url, headers=headers)
-    trends = r.json()[0]["trends"]
-
-    return trends
-
-
-def find_tweets(topic, since_id, token):
-    base_url = "https://api.twitter.com/1.1/search/tweets.json?"
-    headers = dict(accept="application/json", Authorization="Bearer " + token)
-
-    payload = dict(
-        count=100,
-        result_type="recent",
-        lang="en",
-        q=topic,
-        since_id=since_id
-    )
-
-    url = base_url + "q={q}&count={count}&result_type={result_type}&lang={lang}&since_id={since_id}".format(**payload)
-
-    r = requests.get(url, headers=headers)
-    tweets = r.json()["statuses"]
-
-    return tweets
-
 
 def upload_tweets(tweets, graph):
     for t in tweets:
@@ -107,7 +58,7 @@ def upload_tweets(tweets, graph):
 
 @app.task
 def import_tweets():
-    TWITTER_BEARER = get_bearer()
+    TWITTER_BEARER = tw.get_bearer()
 
     # setup db
     graph.cypher.execute("CREATE CONSTRAINT ON (u:User) ASSERT u.username IS UNIQUE")
@@ -117,11 +68,20 @@ def import_tweets():
     since_id = -1
 
     # get trending topics
-    trends = find_trending_topics(TWITTER_BEARER)
+    #trends = tw.find_trending_topics(TWITTER_BEARER)
 
-    for trend in trends:
+    hashtags = ['#FeelTheBern', '#Bernie2016', '#BernieSanders', '#NotMeUs', '#Bernie',
+                '#UniteBlue', '#StillSanders', '#NYPrimary', '#WIPrimary', '#ImWithHer',
+                '#Hillary2016', '#HillaryClinton', '#Hillary', '#Trump2016',
+                '#MakeAmericaGreatAgain', '#TrumpTrain', '#Trump', '#tcot',
+                '#AlwaysTrump', '#TeamTrump', '#WakeUpAmerica', '#ccot', '#TeaParty',
+                '#DonaldTrump', '#TedCruz', '#CruzCrew', '#Cruz2016', '#PJNET',
+                '#elections2016', '#vote', '#cir', '#USlatino', '#AINF', '#Latinos'
+                '#GOP', '#2016Election', '#ImmigrationReform']
+
+    for hash in hashtags:
         try:
-            tweets = find_tweets(trend['query'], since_id=since_id, token=TWITTER_BEARER)
+            tweets = tw.find_tweets(hash, since_id=since_id, token=TWITTER_BEARER)
 
             if not tweets:
                 print "No tweets found."
@@ -137,5 +97,54 @@ def import_tweets():
             time.sleep(10)
             continue
 
+@app.task
+def compute_pagerank():
+    WALKS_PER_USER = 1
+    BORED = 0.15
+
+    total_steps = 0
+    users_count = {}
+
+    # get the count of users in the db
+    total_users = graph.cypher.execute('MATCH (n:User) RETURN DISTINCT count(n)')
+    total_users = total_users[0]['count(n)']
+
+    # for each user of the db
+    for wlk in range(WALKS_PER_USER):
+        for user in graph.find(label='User'):
+            username = user['username']
+            print('User = ' + username)
+
+            while True:
+                total_steps += 1
+
+                if username not in users_count:
+                    users_count[username] = 0
+
+                users_count[username] += 1
+
+                if rnd.random() < BORED:
+                    break
+
+                # stop following users if im bored
+                mentions = []
+                query = 'MATCH (u:User \{username: {0}\})-[p:POSTS]->(t:Tweet)-[r:MENTIONS]->(n:User) RETURN n'\
+                            .format(username)
+
+                for mention in graph.cypher.execute(query):
+                    mentions.add(mention['username'])
+
+                # if it is a sink, jump!
+                if len(mentions) == 0:
+                    query = 'MATCH (u:User) RETURN u, rand() as r ORDER BY r LIMIT 1'
+                    username = graph.cypher.execute(query)[0]['u']['username']
+                    continue
+
+                # get all tweets with mentions
+
+
+                # following a user mention with equal probability
+
+
 if __name__ == '__main__':
-    import_tweets()
+    compute_pagerank()
