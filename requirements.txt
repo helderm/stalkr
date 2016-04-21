@@ -1,4 +1,6 @@
 celery
-py2neo
-requests
+nltk
+py2neo==2.0.8
 pymongo
+requests
+textblob
