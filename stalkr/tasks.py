@@ -5,6 +5,7 @@ from py2neo import Node, Graph, Relationship, authenticate
 from celery import Celery
 from celery.utils.log import get_task_logger
 
+import sentiment as st
 import topics as tp
 import twitter as tw
 
