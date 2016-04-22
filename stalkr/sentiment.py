@@ -1,11 +1,22 @@
 from textblob import TextBlob
+import re
+
+def normalize(text):
+    tokens = text.split()
+    new_string = ""
+
+    for t in tokens:
+        if not (t.startswith('#') or t.startswith('@') or t.startswith('&') or t.startswith('http')):
+            new_string += t + " "
+
+    return new_string
 
 def get_sentiment(text):
+    text = normalize(text.lower())
     s = TextBlob(text).sentiment
-    print s
-    return is_positive([s.polarity, s.subjectivity])
+    return [s.polarity, s.subjectivity]
 
-
+# not using this one for now
 def is_positive(sentiment):
     polarity = sentiment[0]
     factor = sentiment[1]
@@ -20,3 +31,5 @@ def is_positive(sentiment):
         return result
     else:
         return 0
+
+

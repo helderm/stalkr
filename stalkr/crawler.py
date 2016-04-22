@@ -7,6 +7,8 @@ import json
 from py2neo import Graph, Relationship, authenticate, Node
 import sys
 import urllib
+import topics
+import sentiment
 
 #get hashtags from file
 with open('hashtags.txt') as f:
@@ -196,9 +198,14 @@ def check_rates(token):
         print ">> user_direct rate updated!"
         print user_direct
 
+# this is where we should use nltk to obtain the topics
+def process_text(data):
+    tokens = topics.get_topics(data)
+    return tokens
+
 # ids = []
 
-def push_tweet(data, timelineable):
+def push_tweet(data, timelineable, parse_terms):
     global max_id
     global min_id
     global id_policy_bits
@@ -224,12 +231,12 @@ def push_tweet(data, timelineable):
 
     # quotes    
     if "quoted_status" in data:
-        tweet2 = push_tweet(data["quoted_status"], False)
+        tweet2 = push_tweet(data["quoted_status"], False, False)
         graph.create_unique(Relationship(tweet, "QUOTES", tweet2))
 
     # is a retweet
     if "retweeted_status" in data:
-        tweet2 = push_tweet(data["retweeted_status"], False)
+        tweet2 = push_tweet(data["retweeted_status"], False, False)
         graph.create_unique(Relationship(tweet, "RETWEETS", tweet2))     
 
     # reply
@@ -256,8 +263,24 @@ def push_tweet(data, timelineable):
     # rt count
     tweet.properties["retweet_count"] = data["retweet_count"]
 
-    # text (maybe do processing here)
+    # text
     tweet.properties["text"] = data["text"]
+    if "user" in data and parse_terms:
+        for tok in process_text(data["text"]):
+            word = push_word(tok)
+            rel = graph.match_one(user, "DISCUSSES", word)
+            if rel:
+                rel.properties["count"] = rel.properties["count"] + 1
+                rel.push()
+            else:
+                rel = Relationship(user, "DISCUSSES", word)
+                rel.properties["count"] = 1
+                graph.create_unique(rel)
+
+    if "text" in data:
+        sent = sentiment.get_sentiment(data["text"])
+        tweet["polarity"] = sent[0]
+        tweet["subjectivity"] = sent[1]
 
     # hashtags
     for h in data["entities"].get("hashtags", []):
@@ -273,6 +296,10 @@ def push_tweet(data, timelineable):
 
     return tweet
     
+def push_word(data):
+    term = graph.merge_one("Word", "name", data)
+    return term
+
 def push_hashtag(data):
     hashtag = graph.merge_one("Hashtag", "name", data["text"].lower())
     # hashtag.push()
@@ -306,7 +333,7 @@ def crawl(token):
     tweets = get_tweets(token)
 
     for t in tweets:
-        push_tweet(t, True)
+        push_tweet(t, True, True)
 
 # --------------------- MAIN --------------------
 token = get_bearer()
@@ -316,6 +343,7 @@ get_rate_limits(token, TWEET_DIRECT_BITS | TWEET_INDIRECT_BITS | USER_DIRECT_BIT
 graph.cypher.execute("CREATE CONSTRAINT ON (u:User) ASSERT u.id IS UNIQUE")
 graph.cypher.execute("CREATE CONSTRAINT ON (t:Tweet) ASSERT t.id IS UNIQUE")
 graph.cypher.execute("CREATE CONSTRAINT ON (h:Hashtag) ASSERT h.name IS UNIQUE")    
+graph.cypher.execute("CREATE CONSTRAINT ON (w:Word) ASSERT w.name IS UNIQUE")    
 
 while 1:
     try:

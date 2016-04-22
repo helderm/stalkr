@@ -4,11 +4,6 @@ import re
 import nltk
 from nltk.tokenize import WhitespaceTokenizer
 
-# nltk.download('punkt')
-# nltk.download('maxent_ne_chunker')
-# nltk.download('words')
-# nltk.download('averaged_perceptron_tagger')
-
 # List of words to ignore, all in lowercase.
 ignore = Set([
     "don't",
@@ -35,7 +30,11 @@ def get_topics(text):
     tokens = filter(lambda t: not len(t) < 3, tokens)
     tokens = map(lambda t: normalize(t), tokens)
     tokens = filter(lambda t: not skip(t), tokens)
+    tokens = filter(lambda t: not len(t) == 0, tokens)
     tagged = nltk.pos_tag(tokens)
-    nouns = filter(lambda t: t[1].startswith('NN'), tagged)
+    nouns = filter(lambda t: t[1].startswith('NN') or t[1].startswith('JJ'), tagged)
     norm = map(lambda t: stemmer.stem(t[0]), nouns)
+    
     return norm
+
+# print get_topics("@algore Wouldn't a global connected generation full of political will that you've always wanted be great? #EarthDay #FeelTheBern #NowOrNever")
