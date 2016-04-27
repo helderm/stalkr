@@ -5,8 +5,6 @@ from py2neo import Node, Graph, Relationship, authenticate
 from celery import Celery
 from celery.utils.log import get_task_logger
 
-import sentiment as st
-import topics as tp
 import twitter as tw
 
 # init celery
@@ -101,69 +99,5 @@ def import_tweets():
             time.sleep(3)
             continue
 
-@app.task
-def compute_pagerank():
-
-    # set up db
-    neodb = os.getenv('OPENSHIFT_NEO4J_DB_HOST', 'localhost')
-    neoport = os.getenv('OPENSHIFT_NEO4J_DB_PORT', '7474')
-    print('Connecting to Neo4j at {0}:{1}', neodb, neoport)
-    authenticate(neodb + ':' + neoport, "neo4j", "neo4j")
-    graph = Graph('http://{0}:{1}/db/data/'.format(neodb, neoport))
-
-    WALKS_PER_USER = 2
-    BORED = 0.15
-    total_steps = 0
-    users_count = {}
-
-    # for each user of the db
-    for wlk in range(WALKS_PER_USER):
-        print('Intializing walk #{0}'.format(wlk))
-        for i, user in enumerate(graph.find(label='User')):
-            username = user['username']
-
-            if i % 100 == 0:
-                print('[{0}] users ranked, [{1}] steps taken so far...'.format(i, total_steps))
-
-            while True:
-                total_steps += 1
-
-                if username not in users_count:
-                    users_count[username] = 0
-
-                users_count[username] += 1
-
-                # stop following users if im bored
-                if rnd.random() < BORED:
-                    break
-
-                # get all tweets with mentions
-                mentions = []
-                query = 'MATCH (u:User {{username: \'{0}\'}})-[p:POSTS]->(t:Tweet)-[r:MENTIONS]->(n:User) RETURN n'.format(username)
-                for mention in graph.cypher.execute(query):
-                    mentions.append(mention['n']['username'])
-
-                # if it is a sink, jump!
-                if len(mentions) == 0:
-                    query = 'MATCH (u:User) RETURN u, rand() as r ORDER BY r LIMIT 1'
-                    username = graph.cypher.execute(query)[0]['u']['username']
-                    continue
-
-                # choose another mentioned user randomly
-                username = rnd.choice(mentions)
-
-    print('Saving [{0}] ranks into the db...'.format(len(users_count)))
-    for username, count in users_count.iteritems():
-        rank = count / float(total_steps)
-
-        query = 'MATCH (u:User {{username: \'{0}\'}}) RETURN u'.format(username)
-        user = graph.cypher.execute(query)
-        user = user[0]['u']
-        user['rank'] = rank
-        user.push()
-
-    print('PageRank finished!')
-
 if __name__ == '__main__':
-    #compute_pagerank()
     import_tweets()
