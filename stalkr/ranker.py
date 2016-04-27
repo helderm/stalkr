@@ -22,13 +22,13 @@ def compute_pagerank():
 
         total_users = 0
         while True:
-            query = 'MATCH (u:User) RETURN u ORDER BY u.username SKIP {1} LIMIT {0}'.format(limit, total_users)
+            query = 'MATCH (u:User) RETURN u ORDER BY u.screen_name SKIP {1} LIMIT {0}'.format(limit, total_users)
             users = graph.cypher.execute(query)
             if not len(users):
                 break
 
             for user in users:
-                username = user['u']['username']
+                username = user['u']['screen_name']
 
                 while True:
                     total_steps += 1
