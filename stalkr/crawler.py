@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-import time 
+import time
 import base64
 import requests
 import os
@@ -85,19 +85,19 @@ def get_trending_topics(token):
 
     return data
 
-def get_user_data(id, token):    
+def get_user_data(id, token):
     if user_direct[LIMIT_COUNT] >= user_direct[LIMIT_VAL]:
         print ">> Direct user - rate limited! {0}/{1}...".format(user_direct[LIMIT_COUNT], user_direct[LIMIT_VAL])
         return None
     else:
-        print ">> Getting direct user {0}/{1}...".format(user_direct[LIMIT_COUNT], user_direct[LIMIT_VAL])    
+        print ">> Getting direct user {0}/{1}...".format(user_direct[LIMIT_COUNT], user_direct[LIMIT_VAL])
 
     url = "https://api.twitter.com/1.1/users/show.json?screen_name=" + id
     headers = dict(accept = "application/json", Authorization = "Bearer " + token)
 
     r = requests.get(url, headers = headers, timeout = 10)
     data = r.json()
-    
+
     user_direct[LIMIT_COUNT] += 1
 
     return data
@@ -105,7 +105,7 @@ def get_user_data(id, token):
 def get_rate_limits(token, mask):
     print ">> Retrieving rate limits from twitter API..."
     url = "https://api.twitter.com/1.1/application/rate_limit_status.json?resources=users,application,search,statuses"
-    
+
     headers = dict(accept = "application/json", Authorization = "Bearer " + token)
 
     r = requests.get(url, headers = headers, timeout = 10)
@@ -134,25 +134,25 @@ def get_tweet(token, id):
         print ">> Direct tweet - rate limited! {0}/{1}...".format(tweet_direct[LIMIT_COUNT], tweet_direct[LIMIT_VAL])
         return None
     else:
-        print ">> Getting direct tweet {0}/{1}...".format(tweet_direct[LIMIT_COUNT], tweet_direct[LIMIT_VAL])    
+        print ">> Getting direct tweet {0}/{1}...".format(tweet_direct[LIMIT_COUNT], tweet_direct[LIMIT_VAL])
 
     url = "https://api.twitter.com/1.1/statuses/show.json?id={0}".format(id)
-    
+
     headers = dict(accept = "application/json", Authorization = "Bearer " + token)
 
     r = requests.get(url, headers = headers, timeout = 10)
     data = r.json()
 
     tweet_direct[LIMIT_COUNT] += 1
-    
+
     return data
 
-def get_tweets(token):    
+def get_tweets(token):
     if tweet_indirect[LIMIT_COUNT] >= tweet_indirect[LIMIT_VAL]:
         print ">> Indirect tweets - rate limited! {0}/{1}".format(tweet_indirect[LIMIT_COUNT], tweet_indirect[LIMIT_VAL])
         return None
     else:
-        print ">> Getting indirect tweets {0}/{1}...".format(tweet_indirect[LIMIT_COUNT], tweet_indirect[LIMIT_VAL])    
+        print ">> Getting indirect tweets {0}/{1}...".format(tweet_indirect[LIMIT_COUNT], tweet_indirect[LIMIT_VAL])
 
     base_url = "https://api.twitter.com/1.1/search/tweets.json?"
     headers = dict(accept="application/json", Authorization="Bearer " + token)
@@ -168,10 +168,10 @@ def get_tweets(token):
 
     if id_policy_bits & USE_MAX_ID > 0:
         url = url + "&max_id={0}".format(min_id - 1) # avoid single repetition
-        
+
     if id_policy_bits & USE_SINCE_ID > 0:
-        url = url + "&since_id={0}".format(since_id)     
-    
+        url = url + "&since_id={0}".format(since_id)
+
     r = requests.get(url, headers = headers, timeout = 10)
     data = r.json()["statuses"]
 
@@ -205,7 +205,7 @@ def process_text(data):
 
 # ids = []
 
-def push_tweet(data, timelineable, parse_terms):
+def push_tweet(data, timelineable):
     global max_id
     global min_id
     global id_policy_bits
@@ -229,15 +229,15 @@ def push_tweet(data, timelineable, parse_terms):
         user = push_user(data["user"])
         graph.create_unique(Relationship(user, "POSTS", tweet))
 
-    # quotes    
+    # quotes
     if "quoted_status" in data:
-        tweet2 = push_tweet(data["quoted_status"], False, False)
+        tweet2 = push_tweet(data["quoted_status"], False)
         graph.create_unique(Relationship(tweet, "QUOTES", tweet2))
 
     # is a retweet
     if "retweeted_status" in data:
-        tweet2 = push_tweet(data["retweeted_status"], False, False)
-        graph.create_unique(Relationship(tweet, "RETWEETS", tweet2))     
+        tweet2 = push_tweet(data["retweeted_status"], False)
+        graph.create_unique(Relationship(tweet, "RETWEETS", tweet2))
 
     # reply
     reply = data.get("in_reply_to_status_id")
@@ -249,7 +249,7 @@ def push_tweet(data, timelineable, parse_terms):
     # geolocation exact/estimated
     if data["coordinates"] is not None:
         tweet.properties["lon"] = data["coordinates"]["coordinates"][0]
-        tweet.properties["lat"] = data["coordinates"]["coordinates"][1]        
+        tweet.properties["lat"] = data["coordinates"]["coordinates"][1]
     elif data["place"] is not None:
         coordinates = data["place"]["bounding_box"]["coordinates"][0]
         lon = (coordinates[0][0] + coordinates[1][0] + coordinates[2][0] + coordinates[3][0]) / 4
@@ -295,7 +295,7 @@ def push_tweet(data, timelineable, parse_terms):
     tweet.push()
 
     return tweet
-    
+
 def push_word(data):
     term = graph.merge_one("Word", "name", data)
     return term
@@ -307,7 +307,7 @@ def push_hashtag(data):
 
 def push_user(data):
     user = graph.merge_one("User", "id", data["id"])
-    
+
     user.properties["screen_name"] = data["screen_name"]
 
     if "followers_count" in data:
@@ -323,7 +323,7 @@ def push_user(data):
         user.properties["statuses_count"] = data["statuses_count"]
 
     if " " in data:
-        user.properties["verified"] = data["verified"]      
+        user.properties["verified"] = data["verified"]
 
     user.push()
 
@@ -333,7 +333,7 @@ def crawl(token):
     tweets = get_tweets(token)
 
     for t in tweets:
-        push_tweet(t, True, True)
+        push_tweet(t, True)
 
 # --------------------- MAIN --------------------
 token = get_bearer()
@@ -342,8 +342,8 @@ get_rate_limits(token, TWEET_DIRECT_BITS | TWEET_INDIRECT_BITS | USER_DIRECT_BIT
 
 graph.cypher.execute("CREATE CONSTRAINT ON (u:User) ASSERT u.id IS UNIQUE")
 graph.cypher.execute("CREATE CONSTRAINT ON (t:Tweet) ASSERT t.id IS UNIQUE")
-graph.cypher.execute("CREATE CONSTRAINT ON (h:Hashtag) ASSERT h.name IS UNIQUE")    
-graph.cypher.execute("CREATE CONSTRAINT ON (w:Word) ASSERT w.name IS UNIQUE")    
+graph.cypher.execute("CREATE CONSTRAINT ON (h:Hashtag) ASSERT h.name IS UNIQUE")
+graph.cypher.execute("CREATE CONSTRAINT ON (w:Word) ASSERT w.name IS UNIQUE")
 
 while 1:
     try:
@@ -353,7 +353,7 @@ while 1:
         # get_user_data("costalobo_", token)
         check_rates(token)
     except KeyboardInterrupt:
-        sys.exit()        
+        sys.exit()
     except requests.exceptions.RequestException:
         print ">> Connection Timeout!"
         pass

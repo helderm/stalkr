@@ -4,3 +4,5 @@ py2neo==2.0.8
 pymongo
 requests
 textblob
+tornado
+numpy
