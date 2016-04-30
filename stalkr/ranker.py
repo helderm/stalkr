@@ -2,7 +2,7 @@ import os
 import json
 import random as rnd
 from py2neo import Graph, authenticate
-import math
+import numpy as np
 
 shutdown = False
 FILENAME = 'ranker.json'
@@ -57,11 +57,16 @@ def compute_pagerank():
 
                         # get all tweets with mentions
                         mentions = []
+                        followers = []
                         query = 'MATCH (u:User {{screen_name: \'{0}\'}})-[p:POSTS]->(t:Tweet)-[r:MENTIONS]->(n:User) ' \
                                 'RETURN n'.format(username)
 
                         for mention in graph.cypher.execute(query):
                             mentions.append(mention['n']['screen_name'])
+                            if 'followers_count' in mention['n']:
+                                followers.append(mention['n']['followers_count'])
+                            else:
+                                followers.append(1)
 
                         # if it is a sink, jump!
                         if len(mentions) == 0:
@@ -70,7 +75,12 @@ def compute_pagerank():
                             continue
 
                         # choose another mentioned user randomly
-                        username = rnd.choice(mentions)
+                        if args.unbalanced:
+                            username = rnd.choice(mentions)
+                        else:
+                            dist = np.asarray(followers) / float(np.sum(followers))
+                            idx = np.nonzero(np.random.multinomial(1, dist))[0][0]
+                            username = mentions[idx]
 
                     pr_meta['total_users'] += 1
 
@@ -87,12 +97,17 @@ def compute_pagerank():
         # calculate and save the ranks
         users_saved = []
         for username, count in pr_meta['users'].iteritems():
-            rank = math.log(count / float(pr_meta['total_steps']))
+            rank = np.log(count / float(pr_meta['total_steps']))
 
             query = 'MATCH (u:User {{screen_name: \'{0}\'}}) RETURN u'.format(username)
             user = graph.cypher.execute(query)
             user = user[0]['u']
-            user['rank'] = rank
+
+            if args.unbalanced:
+                user['rank'] = rank
+            else:
+                user['rankb'] = rank
+
             user.push()
             users_saved.append(username)
 
@@ -123,6 +138,7 @@ def recover_pagerank():
 
         assert(pr_meta['bored'] == args.bored)
         assert(pr_meta['total_walks'] == args.walks)
+        assert(pr_meta['unbalanced'] == args.unbalanced)
 
         print('File {0} recovered! Resuming PageRank...'.format(FILENAME))
     except:
@@ -130,6 +146,7 @@ def recover_pagerank():
         pr_meta = {
             'bored': args.bored,
             'total_walks': args.walks,
+            'unbalanced': args.unbalanced,
             'total_steps': 0,
             'total_users': 0,
             'users': {},
@@ -171,6 +188,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PageRank MonteCarlo')
     parser.add_argument('--walks', default=2, type=int, help='Total number of walks performed over all users')
     parser.add_argument('--bored', default=0.15, type=float, help='Probability of getting bored in the random walk')
+    parser.add_argument('--unbalanced', action='store_true', help='If true, the number of followers will have no '
+                                                                    'role in the chance of being jumped to')
+
     args = parser.parse_args()
 
     # register signal handlers
