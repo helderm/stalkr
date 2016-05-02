@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-import time
+import time 
 import base64
 import requests
 import os
@@ -40,6 +40,7 @@ graph = Graph('http://{0}:{1}/db/data/'.format(neodb, neoport))
 TWEET_INDIRECT_BITS = 1
 TWEET_DIRECT_BITS = 2
 USER_DIRECT_BITS = 4
+USER_INDIRECT_BITS = 8
 
 LIMIT_COUNT = 0
 LIMIT_VAL = 1
@@ -48,6 +49,7 @@ LIMIT_DEADLINE = 2
 tweet_indirect = [-1, -1, -1]
 tweet_direct = [-1, -1, -1]
 user_direct = [-1, -1, -1]
+user_indirect = [-1, -1, -1]
 
 # timeline controls
 USE_SINCE_ID = 1
@@ -85,19 +87,41 @@ def get_trending_topics(token):
 
     return data
 
-def get_user_data(id, token):
+def get_users_data(ids, token):
+    if user_indirect[LIMIT_COUNT] >= user_indirect[LIMIT_VAL]:
+        if time.time() % 60 == 0:
+            print ">> Indirect users - rate limited! {0}/{1}...".format(user_indirect[LIMIT_COUNT], user_indirect[LIMIT_VAL])
+        return None
+    else:
+        print ">> Getting indirect users {0}/{1}...".format(user_indirect[LIMIT_COUNT], user_indirect[LIMIT_VAL])    
+
+    ids_string = ""
+    for id in ids:
+        ids_string += "{0},".format(id)
+
+    url = "https://api.twitter.com/1.1/users/lookup.json?include_entities=false&user_id=" + ids_string
+    headers = dict(accept = "application/json", Authorization = "Bearer " + token)
+
+    r = requests.get(url, headers = headers, timeout = 10)
+    data = r.json()
+    
+    user_indirect[LIMIT_COUNT] += 1
+
+    return data
+
+def get_user_data(id, token):    
     if user_direct[LIMIT_COUNT] >= user_direct[LIMIT_VAL]:
         print ">> Direct user - rate limited! {0}/{1}...".format(user_direct[LIMIT_COUNT], user_direct[LIMIT_VAL])
         return None
     else:
-        print ">> Getting direct user {0}/{1}...".format(user_direct[LIMIT_COUNT], user_direct[LIMIT_VAL])
+        print ">> Getting direct user {0}/{1}...".format(user_direct[LIMIT_COUNT], user_direct[LIMIT_VAL])    
 
     url = "https://api.twitter.com/1.1/users/show.json?screen_name=" + id
     headers = dict(accept = "application/json", Authorization = "Bearer " + token)
 
     r = requests.get(url, headers = headers, timeout = 10)
     data = r.json()
-
+    
     user_direct[LIMIT_COUNT] += 1
 
     return data
@@ -105,7 +129,7 @@ def get_user_data(id, token):
 def get_rate_limits(token, mask):
     print ">> Retrieving rate limits from twitter API..."
     url = "https://api.twitter.com/1.1/application/rate_limit_status.json?resources=users,application,search,statuses"
-
+    
     headers = dict(accept = "application/json", Authorization = "Bearer " + token)
 
     r = requests.get(url, headers = headers, timeout = 10)
@@ -129,30 +153,36 @@ def get_rate_limits(token, mask):
         user_direct[LIMIT_DEADLINE] = data["users"]["/users/show/:id"]["reset"]
         print ">> Direct user limits [count:{0}, limit:{1}, deadline:{2}]".format(user_direct[0], user_direct[1], user_direct[2])
 
+    if mask & USER_INDIRECT_BITS > 0:
+        user_indirect[LIMIT_COUNT] = 0
+        user_indirect[LIMIT_VAL] = data["users"]["/users/lookup"]["remaining"]
+        user_indirect[LIMIT_DEADLINE] = data["users"]["/users/lookup"]["reset"]
+        print ">> Indirect user limits [count:{0}, limit:{1}, deadline:{2}]".format(user_indirect[0], user_indirect[1], user_indirect[2])
+
 def get_tweet(token, id):
     if tweet_direct[LIMIT_COUNT] >= tweet_direct[LIMIT_VAL]:
         print ">> Direct tweet - rate limited! {0}/{1}...".format(tweet_direct[LIMIT_COUNT], tweet_direct[LIMIT_VAL])
         return None
     else:
-        print ">> Getting direct tweet {0}/{1}...".format(tweet_direct[LIMIT_COUNT], tweet_direct[LIMIT_VAL])
+        print ">> Getting direct tweet {0}/{1}...".format(tweet_direct[LIMIT_COUNT], tweet_direct[LIMIT_VAL])    
 
     url = "https://api.twitter.com/1.1/statuses/show.json?id={0}".format(id)
-
+    
     headers = dict(accept = "application/json", Authorization = "Bearer " + token)
 
     r = requests.get(url, headers = headers, timeout = 10)
     data = r.json()
 
     tweet_direct[LIMIT_COUNT] += 1
-
+    
     return data
 
-def get_tweets(token):
+def get_tweets(token):    
     if tweet_indirect[LIMIT_COUNT] >= tweet_indirect[LIMIT_VAL]:
         print ">> Indirect tweets - rate limited! {0}/{1}".format(tweet_indirect[LIMIT_COUNT], tweet_indirect[LIMIT_VAL])
         return None
     else:
-        print ">> Getting indirect tweets {0}/{1}...".format(tweet_indirect[LIMIT_COUNT], tweet_indirect[LIMIT_VAL])
+        print ">> Getting indirect tweets {0}/{1}...".format(tweet_indirect[LIMIT_COUNT], tweet_indirect[LIMIT_VAL])    
 
     base_url = "https://api.twitter.com/1.1/search/tweets.json?"
     headers = dict(accept="application/json", Authorization="Bearer " + token)
@@ -168,10 +198,10 @@ def get_tweets(token):
 
     if id_policy_bits & USE_MAX_ID > 0:
         url = url + "&max_id={0}".format(min_id - 1) # avoid single repetition
-
+        
     if id_policy_bits & USE_SINCE_ID > 0:
-        url = url + "&since_id={0}".format(since_id)
-
+        url = url + "&since_id={0}".format(since_id)     
+    
     r = requests.get(url, headers = headers, timeout = 10)
     data = r.json()["statuses"]
 
@@ -181,7 +211,6 @@ def get_tweets(token):
 
 def check_rates(token):
     if time.time() > tweet_indirect[LIMIT_DEADLINE]:
-
         get_rate_limits(token, TWEET_INDIRECT_BITS)
         id_policy_bits = USE_SINCE_ID
         since_id = max_id
@@ -198,6 +227,11 @@ def check_rates(token):
         print ">> user_direct rate updated!"
         print user_direct
 
+    if time.time() > user_indirect[LIMIT_DEADLINE]:
+        get_rate_limits(token, USER_INDIRECT_BITS)
+        print ">> user_indirect rate updated!"
+        print user_indirect    
+
 # this is where we should use nltk to obtain the topics
 def process_text(data):
     tokens = topics.get_topics(data)
@@ -205,7 +239,7 @@ def process_text(data):
 
 # ids = []
 
-def push_tweet(data, timelineable):
+def push_tweet(data, timelineable, parse_terms):
     global max_id
     global min_id
     global id_policy_bits
@@ -229,15 +263,15 @@ def push_tweet(data, timelineable):
         user = push_user(data["user"])
         graph.create_unique(Relationship(user, "POSTS", tweet))
 
-    # quotes
+    # quotes    
     if "quoted_status" in data:
-        tweet2 = push_tweet(data["quoted_status"], False)
+        tweet2 = push_tweet(data["quoted_status"], False, False)
         graph.create_unique(Relationship(tweet, "QUOTES", tweet2))
 
     # is a retweet
     if "retweeted_status" in data:
-        tweet2 = push_tweet(data["retweeted_status"], False)
-        graph.create_unique(Relationship(tweet, "RETWEETS", tweet2))
+        tweet2 = push_tweet(data["retweeted_status"], False, False)
+        graph.create_unique(Relationship(tweet, "RETWEETS", tweet2))     
 
     # reply
     reply = data.get("in_reply_to_status_id")
@@ -249,7 +283,7 @@ def push_tweet(data, timelineable):
     # geolocation exact/estimated
     if data["coordinates"] is not None:
         tweet.properties["lon"] = data["coordinates"]["coordinates"][0]
-        tweet.properties["lat"] = data["coordinates"]["coordinates"][1]
+        tweet.properties["lat"] = data["coordinates"]["coordinates"][1]        
     elif data["place"] is not None:
         coordinates = data["place"]["bounding_box"]["coordinates"][0]
         lon = (coordinates[0][0] + coordinates[1][0] + coordinates[2][0] + coordinates[3][0]) / 4
@@ -268,6 +302,23 @@ def push_tweet(data, timelineable):
     if "user" in data and parse_terms:
         for tok in process_text(data["text"]):
             word = push_word(tok)
+            if "terms" in user.properties:
+                terms = user.properties["terms"]
+                q = "{0}:".format(tok)
+                idx = terms.find(q)
+                if not idx == -1:
+                    sub = terms[(idx + len(q)):]
+                    sub = sub[:sub.find(" ")]
+                    q += sub
+                    terms = terms.replace(q, "{0}:{1}".format(tok, int(sub) + 1))
+                else:
+                    terms += "{0}:1 ".format(tok)
+                user.properties["terms"] = terms
+                user.properties["term_count"] = user.properties["term_count"] + 1
+            else:
+                user.properties["term_count"] = 1
+                user.properties["terms"] = "{0}:1 ".format(tok)
+            user.push()
             rel = graph.match_one(user, "DISCUSSES", word)
             if rel:
                 rel.properties["count"] = rel.properties["count"] + 1
@@ -281,6 +332,16 @@ def push_tweet(data, timelineable):
         sent = sentiment.get_sentiment(data["text"])
         tweet["polarity"] = sent[0]
         tweet["subjectivity"] = sent[1]
+        for tok in process_text(data["text"]):
+            word = push_word(tok)
+            rel = graph.match_one(tweet, "CONTAINS", word)
+            if rel:
+                rel.properties["count"] = rel.properties["count"] + 1
+                rel.push()
+            else:
+                rel = Relationship(tweet, "CONTAINS", word)
+                rel.properties["count"] = 1
+                graph.create_unique(rel)
 
     # hashtags
     for h in data["entities"].get("hashtags", []):
@@ -295,19 +356,18 @@ def push_tweet(data, timelineable):
     tweet.push()
 
     return tweet
-
+    
 def push_word(data):
     term = graph.merge_one("Word", "name", data)
     return term
 
 def push_hashtag(data):
     hashtag = graph.merge_one("Hashtag", "name", data["text"].lower())
-    # hashtag.push()
     return hashtag
 
 def push_user(data):
     user = graph.merge_one("User", "id", data["id"])
-
+    
     user.properties["screen_name"] = data["screen_name"]
 
     if "followers_count" in data:
@@ -322,9 +382,6 @@ def push_user(data):
     if "statuses_count" in data:
         user.properties["statuses_count"] = data["statuses_count"]
 
-    if " " in data:
-        user.properties["verified"] = data["verified"]
-
     user.push()
 
     return user
@@ -333,30 +390,34 @@ def crawl(token):
     tweets = get_tweets(token)
 
     for t in tweets:
-        push_tweet(t, True)
+        push_tweet(t, True, True)
 
 # --------------------- MAIN --------------------
 token = get_bearer()
 
-get_rate_limits(token, TWEET_DIRECT_BITS | TWEET_INDIRECT_BITS | USER_DIRECT_BITS)
+get_rate_limits(token, TWEET_DIRECT_BITS | TWEET_INDIRECT_BITS | USER_DIRECT_BITS | USER_INDIRECT_BITS)
 
 graph.cypher.execute("CREATE CONSTRAINT ON (u:User) ASSERT u.id IS UNIQUE")
 graph.cypher.execute("CREATE CONSTRAINT ON (t:Tweet) ASSERT t.id IS UNIQUE")
-graph.cypher.execute("CREATE CONSTRAINT ON (h:Hashtag) ASSERT h.name IS UNIQUE")
-graph.cypher.execute("CREATE CONSTRAINT ON (w:Word) ASSERT w.name IS UNIQUE")
+graph.cypher.execute("CREATE CONSTRAINT ON (h:Hashtag) ASSERT h.name IS UNIQUE")    
+graph.cypher.execute("CREATE CONSTRAINT ON (w:Word) ASSERT w.name IS UNIQUE")    
 
-while 1:
-    try:
-        crawl(token)
-        # get_tweets(token, 0)
-        # get_tweet(token, 722575509545185280)
-        # get_user_data("costalobo_", token)
-        check_rates(token)
-    except KeyboardInterrupt:
-        sys.exit()
-    except requests.exceptions.RequestException:
-        print ">> Connection Timeout!"
-        pass
-    # except Exception, e:
-        # time.sleep(10)
-        # pass
+if __name__ == "__main__":
+    while 1:
+        try:
+            crawl(token)
+            # get_tweets(token, 0)
+            # get_tweet(token, 722575509545185280)
+            # get_user_data("costalobo_", token)
+            check_rates(token)
+        except KeyboardInterrupt:
+            sys.exit()        
+        except requests.exceptions.RequestException:
+            print ">> Connection Timeout!"
+            pass
+        # except Exception, e:
+        #     print ">> Exception: {0} Proceeding to next chunk.".format(str(e))
+        #     time.sleep(10)
+        #     pass
+
+
