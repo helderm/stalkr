@@ -3,10 +3,33 @@ import json
 import random as rnd
 from py2neo import Graph, authenticate
 import numpy as np
+from functools32 import lru_cache
+from time import time
 
 shutdown = False
 FILENAME = 'ranker.json'
 LIMIT = 100
+graph = None
+
+
+@lru_cache(maxsize=262144)
+def get_mentions_followers(username):
+    global graph
+
+    mentions = []
+    followers = []
+    query = 'MATCH (u:User {{screen_name: \'{0}\'}})-[p:POSTS]->(t:Tweet)-[r:MENTIONS]->(n:User) ' \
+            'RETURN n'.format(username)
+
+    for mention in graph.cypher.execute(query):
+        mentions.append(mention['n']['screen_name'])
+        if 'followers_count' in mention['n']:
+            followers.append(mention['n']['followers_count'])
+        else:
+            followers.append(1)
+
+    return mentions, followers
+
 
 def compute_pagerank():
     print('Initializing PageRank calculation...')
@@ -16,6 +39,8 @@ def compute_pagerank():
     neoport = os.getenv('OPENSHIFT_NEO4J_DB_PORT', '7474')
     print('Connecting to Neo4j at {0}:{1}'.format(neodb, neoport))
     authenticate(neodb + ':' + neoport, "neo4j", "neo4j")
+
+    global graph
     graph = Graph('http://{0}:{1}/db/data/'.format(neodb, neoport))
 
     pr_meta = recover_pagerank()
@@ -39,6 +64,8 @@ def compute_pagerank():
                 if not len(users):
                     break
 
+                start_time = time()
+
                 for user in users:
                     username = user['u']['screen_name']
 
@@ -56,17 +83,7 @@ def compute_pagerank():
                             break
 
                         # get all tweets with mentions
-                        mentions = []
-                        followers = []
-                        query = 'MATCH (u:User {{screen_name: \'{0}\'}})-[p:POSTS]->(t:Tweet)-[r:MENTIONS]->(n:User) ' \
-                                'RETURN n'.format(username)
-
-                        for mention in graph.cypher.execute(query):
-                            mentions.append(mention['n']['screen_name'])
-                            if 'followers_count' in mention['n']:
-                                followers.append(mention['n']['followers_count'])
-                            else:
-                                followers.append(1)
+                        mentions, followers = get_mentions_followers(username)
 
                         # if it is a sink, jump!
                         if len(mentions) == 0:
@@ -87,7 +104,11 @@ def compute_pagerank():
                     if shutdown:
                         save_and_shutdown(pr_meta)
 
-                print('[{0}] users ranked, [{1}] steps taken so far...'.format(pr_meta['total_users'], pr_meta['total_steps']))
+                end_time = time()
+                time_taken = end_time - start_time
+                print('[{0}] users ranked in [{2}]s, [{1}] steps taken so far...'.format(pr_meta['total_users'],
+                        pr_meta['total_steps'], time_taken))
+                print('{0}'.format(get_mentions_followers.cache_info()))
 
             pr_meta['total_users'] = 0
 
@@ -96,6 +117,7 @@ def compute_pagerank():
 
         # calculate and save the ranks
         users_saved = []
+        start_time = time()
         for username, count in pr_meta['users'].iteritems():
             rank = np.log(count / float(pr_meta['total_steps']))
 
@@ -112,7 +134,9 @@ def compute_pagerank():
             users_saved.append(username)
 
             if len(users_saved) % 1000 == 0:
-                print('[{0}] users saved so far...'.format(len(users_saved)))
+                time_taken = time() - start_time
+                print('[{0}] users saved in [{1}]s so far...'.format(len(users_saved), time_taken))
+                start_time = time()
 
             if shutdown:
                 # remove the ranks that we already stored
@@ -142,7 +166,8 @@ def recover_pagerank():
 
         print('File {0} recovered! Resuming PageRank...'.format(FILENAME))
     except:
-        silentremove(FILENAME)
+        print('File {0} not found or invalid! Ignoring it...'.format(FILENAME))
+        #silentremove(FILENAME)
         pr_meta = {
             'bored': args.bored,
             'total_walks': args.walks,
@@ -186,7 +211,7 @@ if __name__ == '__main__':
 
     # parse command line args
     parser = argparse.ArgumentParser(description='PageRank MonteCarlo')
-    parser.add_argument('--walks', default=2, type=int, help='Total number of walks performed over all users')
+    parser.add_argument('--walks', default=1, type=int, help='Total number of walks performed over all users')
     parser.add_argument('--bored', default=0.15, type=float, help='Probability of getting bored in the random walk')
     parser.add_argument('--unbalanced', action='store_true', help='If true, the number of followers will have no '
                                                                     'role in the chance of being jumped to')
