@@ -65,7 +65,7 @@ def main():
     define("neo4j_user_pwd", default='neo4j:neo4j', help="Neo4j User and Password")
     tornado.options.parse_command_line()
 
-    print('Connecting to Neo4j at {0}...', options.neo4j_host_port)
+    print('Connecting to Neo4j at {0}...'.format(options.neo4j_host_port))
     user = options.neo4j_user_pwd.split(':')[0]
     pwd = options.neo4j_user_pwd.split(':')[1]
     authenticate(options.neo4j_host_port, user, pwd)
@@ -84,6 +84,7 @@ def main():
     application = Application([(r'/users/?', MainHandler, dict(db=db)),
                                (r'/?', HomeHandler)], **settings)
 
+    print('Listening on {0}:{1}'.format(options.host, options.port))
     application.listen(options.port, options.host)
     tornado.ioloop.IOLoop.instance().start()
 
