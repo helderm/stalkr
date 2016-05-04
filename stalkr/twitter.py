@@ -2,7 +2,7 @@
 
 import os
 import requests
-
+import urllib
 
 def get_bearer():
     if os.environ.get('TWITTER_BEARER', None) is not None:
@@ -54,3 +54,26 @@ def find_tweets(topic, since_id, token):
     tweets = r.json()["statuses"]
 
     return tweets
+
+def get_user_profile_image_url(user_id, token):
+    params = dict(
+        user_id=user_id,
+    )
+    url = get_url("users/show", params)
+    res = authenticated_request(url, token)
+    if "profile_image_url" in res:
+        return res["profile_image_url"].replace("_normal", "_bigger")
+    else:
+        return None
+
+def get_url(path, params):
+    query = urllib.urlencode(params)
+    return "https://api.twitter.com/1.1/users/show.json?" + query
+
+def authenticated_request(url, token):
+    headers = dict(
+        accept="application/json",
+        Authorization="Bearer " + token,
+    )
+    res = requests.get(url, headers=headers)
+    return res.json()

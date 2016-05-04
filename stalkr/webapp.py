@@ -8,8 +8,13 @@ import json
 import os
 from py2neo import Graph, authenticate
 
+from cache import Cache
+import twitter
+
 base_url = 'http://' + os.getenv('OPENSHIFT_GEAR_DNS', 'localhost:8080')
 
+# Image cache directory
+cache_dir = '/var/tmp/stalkr'
 
 class HomeHandler(RequestHandler):
 
@@ -57,6 +62,41 @@ class MainHandler(RequestHandler):
 
         self.write(res)
 
+class ImageHandler(RequestHandler):
+    def initialize(self, directory):
+        self.cache = Cache(directory)
+        self.twitter_token = twitter.get_bearer()
+
+    @coroutine
+    def get(self, user_id=None):
+        image = self.cache.get(user_id)
+        if not image:
+            print("ImageHandler: {0}: image not present in cache".format(user_id))
+            url = twitter.get_user_profile_image_url(user_id, self.twitter_token)
+            if url is not None:
+                print("ImageHandler: {0}: resolved profile image URL: {1}".format(user_id, url))
+                if self.cache.set(user_id, url):
+                    print("ImageHandler: {0}: cached image".format(user_id))
+                else:
+                    self.fatal("ImageHandler: {0}: failed to cache image".format(user_id))
+            else:
+                self.fatal("ImageHandler: {0}: failed to fetch profile image URL from Twitter".format(user_id))
+            # Successfully cached user image.
+            image = self.cache.get(user_id)
+
+        content_type = self.path_to_content_type(image)
+        self.set_header("Content-Type", content_type)
+        with open(image, "r") as f:
+            self.write(f.read())
+
+    def fatal(self, message):
+        print(message)
+        raise tornado.web.HTTPError(404)
+
+    def path_to_content_type(self, path):
+        _, extension = os.path.splitext(path)
+        # Remove leading dot from extension.
+        return "image/{0}".format(extension[1:])
 
 def main():
     define("host", default="127.0.0.1", help="Host IP")
@@ -81,8 +121,12 @@ def main():
         'template_path': template_dir
     }
 
-    application = Application([(r'/users/?', MainHandler, dict(db=db)),
-                               (r'/?', HomeHandler)], **settings)
+    application = Application([
+                                  (r'/image/([^/]*)', ImageHandler, dict(directory=cache_dir)),
+                                  (r'/users/?', MainHandler, dict(db=db)),
+                                  (r'/?', HomeHandler)
+                              ],
+                              **settings)
 
     print('Listening on {0}:{1}'.format(options.host, options.port))
     application.listen(options.port, options.host)
