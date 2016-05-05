@@ -4,6 +4,7 @@ import topics
 #Functionality using word2vec and nltk to use a previously trained model
 #and from an input word find synonyms and return them in a list.
 #The words are cleaned according to the method get_topics in topics.py.
+#Have not tested code on unix, vectors.bin can be found at google drive together with the shared report.
 
 def get_synonyms(word):
     #Clean input word (lowercase, stemming, ect)
