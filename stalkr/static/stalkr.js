@@ -3,28 +3,33 @@ function renderGraph(users, query) {
     var nodes = [],
         links = [];
 
-    users.forEach(function (user) {
-        user.label = "User";
-        nodes.push(user);
-    });
-
-    nodes.push({
-        id:    0,
-        title: query,
-        label: "Topic",
-    });
+    var terms = query.split(/ +/);
+    for (var i = 0; i < terms.length; i++) {
+        nodes.push({
+            id:    i,
+            title: terms[i],
+            label: "Topic",
+        });
+    }
 
     for (var i = 0; i < users.length; i++) {
-        links.push({
-            source: i,
-            target: nodes.length - 1,
-            type:   "DISCUSSES",
-            value:  1,
-        });
+        var user = users[i];
+        user.label = "User";
+        for (var j = 0; j < user.terms.length; j++) {
+            links.push({
+                source: i + terms.length,
+                target: user.terms[j],
+            });
+        }
+        nodes.push(user);
     }
 
     graph = {nodes:nodes, links:links};
     var maxUserScore = graph.nodes
+        .filter(function (n) { return n.label === "User"; })
+        .map(function (u) { return Math.abs(u.rank); })
+        .reduce(function (x, y) { return x < y ? x : y; });
+    var minUserScore = graph.nodes
         .filter(function (n) { return n.label === "User"; })
         .map(function (u) { return Math.abs(u.rank); })
         .reduce(function (x, y) { return x > y ? x : y; });
@@ -32,7 +37,7 @@ function renderGraph(users, query) {
     // force layout setup
     var width = window.innerWidth*0.9, height = window.innerHeight;
     var force = d3.layout.force()
-        .charge(-800).linkDistance(150).size([width, height]);
+        .charge(-1000).linkDistance(150).size([width, height]);
 
     d3.select("#graph").selectAll("*").remove();
     // setup svg div
@@ -74,7 +79,7 @@ function renderGraph(users, query) {
     groups
         .append("circle")
         .attr("class", function (d) { return "node " + d.label })
-        .attr("r", function (d) { return d.label == "Topic" ? 40 : userRadius(d, maxUserScore, Math.abs(d.rank)); })
+        .attr("r", function (d) { return d.label == "Topic" ? 60 : userRadius(d, minUserScore, maxUserScore, Math.abs(d.rank)); })
         .attr("fill", function (d){ return nodeColor(d); })
 
     groups
@@ -111,8 +116,8 @@ function renderGraph(users, query) {
 };
 
 var TOPIC_RADIUS_SCALE = 5;
-var USER_RADIUS_SCALE = 30;
-var USER_RADIUS_MIN = 10;
+var USER_RADIUS_MAX = 70;
+var USER_RADIUS_MIN = 35;
 
 function topicRadius(links, id) {
     var incomingLinks = 0;
@@ -124,11 +129,9 @@ function topicRadius(links, id) {
     return incomingLinks * TOPIC_RADIUS_SCALE;
 }
 
-function userRadius(node, maxScore, rank) {
-    console.log(maxScore);
-    console.log(rank);
-    node.radius = rank/maxScore;
-    var radius = node.radius*USER_RADIUS_SCALE;
+function userRadius(node, minScore, maxScore, rank) {
+    var fraction = (rank - minScore)/(maxScore - minScore);
+    var radius = fraction*USER_RADIUS_MAX;
     return radius < USER_RADIUS_MIN ? USER_RADIUS_MIN : radius;
 }
 
@@ -152,46 +155,15 @@ function nodeText(node) {
 };
 
 var ajax = function (query) {
-// var res = { "results": [
-//     {
-//         "columns": ["path"],
-//             "data"   : [{
-//                 "graph": {
-//                     "nodes": [
-//                     {"id": "1", "labels": ["User"], "properties": {"name":  "Peter",    "user_id": 437580276, "score": 9}},
-//                     {"id": "2", "labels": ["User"], "properties": {"name":  "Michael",  "user_id": 437580276, "score": 6}},
-//                     {"id": "3", "labels": ["User"], "properties": {"name":  "Jungus",   "user_id": 437580276, "score": 1}},
-//                     {"id": "4", "labels": ["User"], "properties": {"name":  "McD",      "user_id": 437580276, "score": 3}},
-//                     {"id": "7", "labels": ["User"], "properties": {"name":  "Stallman", "user_id": 25073877, "score": 2}},
-//                     {"id": "8", "labels": ["User"], "properties": {"name":  "Unix",     "user_id": 437580276, "score": 10}},
-//                     {"id": "5", "labels": ["Topic"], "properties": {"name": "Politics"}},
-//                     {"id": "6", "labels": ["Topic"], "properties": {"name": "Trump"}}
-//                     ],
-//                         "relationships": [
-//                         {"id": "0", "type": "DISCUSSES", "startNode": "1", "endNode": "5", "properties": {}},
-//                         {"id": "0", "type": "DISCUSSES", "startNode": "1", "endNode": "6", "properties": {}},
-//                         {"id": "0", "type": "DISCUSSES", "startNode": "2", "endNode": "5", "properties": {}},
-//                         {"id": "0", "type": "DISCUSSES", "startNode": "2", "endNode": "6", "properties": {}},
-//                         {"id": "0", "type": "DISCUSSES", "startNode": "3", "endNode": "6", "properties": {}},
-//                         {"id": "0", "type": "DISCUSSES", "startNode": "4", "endNode": "5", "properties": {}},
-//                         {"id": "0", "type": "DISCUSSES", "startNode": "4", "endNode": "6", "properties": {}},
-//                         {"id": "0", "type": "DISCUSSES", "startNode": "7", "endNode": "6", "properties": {}},
-//                         {"id": "0", "type": "DISCUSSES", "startNode": "8", "endNode": "6", "properties": {}}
-//                     ]
-//                 } // , {"graph": ...}, ...
-//             }]}
-//         ], "errors": []
-// };
-
     $.getJSON("/users?q=" + query, function(res) {
         renderGraph(res.users, query);
     });
 };
 
 $(document).ready(function () {
-$("form").submit(function (e) {
-    e.preventDefault();
-    var query = $(this).find("#query").val();
-    ajax(query);
-});
+    $("form").submit(function (e) {
+        e.preventDefault();
+        var query = $(this).find("#query").val();
+        ajax(query);
+    });
 });
