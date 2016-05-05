@@ -44,8 +44,7 @@ class MainHandler(RequestHandler):
         self.db = db
 
     @coroutine
-    def get(self, topic=None):
-        print topic
+    def get(self):
         cypher = self.db.cypher
         query = self.get_argument('q')
         alpha = float(self.get_argument('a', 0.5))
@@ -120,7 +119,7 @@ def main():
 
     application = Application([
                                   (r'/image/([^/]*)', ImageHandler, dict(directory=cache_dir)),
-                                  (r'/users/([^/]*)', MainHandler, dict(db=db)),
+                                  (r'/users/?', MainHandler, dict(db=db)),
                                   (r'/?', HomeHandler)
                               ],
                               **settings)

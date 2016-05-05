@@ -59,9 +59,12 @@ def recommend(query, alpha = 0.5, pr_type = 'rankb', limit=30):
                     'screen_name': u['u.screen_name'],
                     'length': u['u.term_count'],
                     'tscore': 0.0,
-                    'pscore': (u['u.{0}'.format(pr_type)] - pravg) / prstdev
+                    'pscore': (u['u.{0}'.format(pr_type)] - pravg) / prstdev,
+                    'tokens': [ ]
                 }
                 users[u["u.id"]] = user
+
+            users[u["u.id"]]['tokens'].append(token)
 
             #if counter % 1000 == 0:
             #    print ">> Processed {0} users".format(counter)
@@ -106,8 +109,8 @@ def recommend(query, alpha = 0.5, pr_type = 'rankb', limit=30):
     #ret = sorted(ret, key=lambda k: k['score'], reverse = True)
     return ret[:limit]
 
-
-query = "donald trump"
-result = recommend(query, alpha=0.5, pr_type='rankb')
-#sorted_x = sorted(result.items(), key = operator.itemgetter(1), reverse = True)
-print result
+if __name__ == '__main__':
+    query = "donald trump"
+    result = recommend(query, alpha=0.5, pr_type='rankb')
+    #sorted_x = sorted(result.items(), key = operator.itemgetter(1), reverse = True)
+    print result
