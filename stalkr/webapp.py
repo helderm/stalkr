@@ -11,6 +11,7 @@ from py2neo import Graph, authenticate
 from cache import Cache
 import twitter
 from tfidf import recommend
+from topics import get_topics
 
 base_url = 'http://' + os.getenv('OPENSHIFT_GEAR_DNS', 'localhost:8080')
 
@@ -44,8 +45,7 @@ class MainHandler(RequestHandler):
         self.db = db
 
     @coroutine
-    def get(self, topic=None):
-        print topic
+    def get(self):
         cypher = self.db.cypher
         query = self.get_argument('q')
         alpha = float(self.get_argument('a', 0.5))
@@ -53,10 +53,19 @@ class MainHandler(RequestHandler):
         limit = int(self.get_argument('l', 30))
 
         users = recommend(query, alpha=alpha, pr_type=prtype, limit=limit)
+        terms = get_topics(query)
 
-        res = {'status': 0,
-                'users': users}
+        # TODO: implement the recommender algorithm
+        query = 'MATCH (u:User) WITH u, rand() AS number RETURN u ORDER BY number LIMIT {0}'.format(20)
+        cursor = cypher.execute(query)
+        users = []
+        for res in cursor:
+            user = {}
+            for key in res['u'].properties:
+                user[key] = res['u'].properties[key]
+            users.append(user)
 
+        res = {'users': users}
         self.write(res)
 
 class ImageHandler(RequestHandler):
@@ -74,12 +83,13 @@ class ImageHandler(RequestHandler):
                 print("ImageHandler: {0}: resolved profile image URL: {1}".format(user_id, url))
                 if self.cache.set(user_id, url):
                     print("ImageHandler: {0}: cached image".format(user_id))
+                    # Successfully cached user image.
+                    image = self.cache.get(user_id)
                 else:
                     self.fatal("ImageHandler: {0}: failed to cache image".format(user_id))
             else:
-                self.fatal("ImageHandler: {0}: failed to fetch profile image URL from Twitter".format(user_id))
-            # Successfully cached user image.
-            image = self.cache.get(user_id)
+                print("ImageHandler: {0}: failed to fetch profile image URL from Twitter".format(user_id))
+                image = "./static/default.png"
 
         content_type = self.path_to_content_type(image)
         self.set_header("Content-Type", content_type)
@@ -120,7 +130,7 @@ def main():
 
     application = Application([
                                   (r'/image/([^/]*)', ImageHandler, dict(directory=cache_dir)),
-                                  (r'/users/([^/]*)', MainHandler, dict(db=db)),
+                                  (r'/users/?', MainHandler, dict(db=db)),
                                   (r'/?', HomeHandler)
                               ],
                               **settings)

@@ -28,6 +28,7 @@ class Cache:
         res = requests.get(url)
         if res.status_code == 200:
             _, extension = os.path.splitext(url)
+            extension = extension.lower()
             if extension[1:] not in self.extensions:
                 raise UnknownExtensionException(extension[1:])
             filename = key + extension
