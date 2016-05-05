@@ -10,6 +10,7 @@ from py2neo import Graph, authenticate
 
 from cache import Cache
 import twitter
+from tfidf import recommend
 
 base_url = 'http://' + os.getenv('OPENSHIFT_GEAR_DNS', 'localhost:8080')
 
@@ -46,16 +47,11 @@ class MainHandler(RequestHandler):
     def get(self, uuid=None):
         cypher = self.db.cypher
         query = self.get_argument('q')
+        alpha = float(self.get_argument('a', 0.5))
+        prtype = self.get_argument('t', 'rankb')
+        limit = int(self.get_argument('l', 30))
 
-        users = []
-
-        # TODO: implement the recommender algorithm
-        query = 'MATCH (u:User) RETURN u ORDER BY u.screen_name LIMIT {0}'.format(20)
-        cursor = cypher.execute(query)
-
-        for res in cursor:
-            user = {'username': res['u']['screen_name']}
-            users.append(user)
+        users = recommend(query, alpha=alpha, pr_type=prtype, limit=limit)
 
         res = {'status': 0,
                 'users': users}
