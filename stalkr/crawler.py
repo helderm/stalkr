@@ -303,21 +303,21 @@ def push_tweet(data, timelineable, parse_terms):
         for tok in process_text(data["text"]):
             word = push_word(tok)
             if "terms" in user.properties:
-                terms = user.properties["terms"]
-                q = "{0}:".format(tok)
-                idx = terms.find(q)
-                if not idx == -1:
-                    sub = terms[(idx + len(q)):]
-                    sub = sub[:sub.find(" ")]
-                    q += sub
-                    terms = terms.replace(q, "{0}:{1}".format(tok, int(sub) + 1))
-                else:
-                    terms += "{0}:1 ".format(tok)
-                user.properties["terms"] = terms
+                # terms = user.properties["terms"]
+                # q = "{0}:".format(tok)
+                # idx = terms.find(q)
+                # if not idx == -1:
+                #     sub = terms[(idx + len(q)):]
+                #     sub = sub[:sub.find(" ")]
+                #     q += sub
+                #     terms = terms.replace(q, "{0}:{1}".format(tok, int(sub) + 1))
+                # else:
+                #     terms += "{0}:1 ".format(tok)
+                # user.properties["terms"] = terms
                 user.properties["term_count"] = user.properties["term_count"] + 1
             else:
                 user.properties["term_count"] = 1
-                user.properties["terms"] = "{0}:1 ".format(tok)
+                # user.properties["terms"] = "{0}:1 ".format(tok)
             user.push()
             rel = graph.match_one(user, "DISCUSSES", word)
             if rel:
