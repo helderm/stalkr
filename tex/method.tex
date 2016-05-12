@@ -29,17 +29,18 @@ cause. These are \textit{don't, i'll, retweet and rt}.
 \subsubsection{Extracting nouns}
 
 The nouns (topics) are extracted by performing the following actions, provided
-by NLTK.
+by NLTK:
+
 \begin{enumerate}
-    \item Tokenize the freetext and convert them into lowercase.
-    \item Remove words that are shorter than three characters. This was also a
-        decision made by the group.
-    \item For each word, remove ignored symbols.
-    \item Skip words that start with one of the ignored symbols.
-    \item Part of Speech-tag \cite{pos} the words.
+    \item Lowercase all letters and tokenize the text into separate tokens
+    \item Remove words that are shorter than three characters (This was also a
+          decision made by the group)
+    \item For each word, remove ignored symbols and words starting with a
+	    ignored symbol
+    \item Part of Speech-tag \cite{pos} the words
     \item Pick the words that are tagged as \texttt{NN} (noun) or \texttt{JJ}
-        (adjective).
-    \item Stem the words and return the result.
+        (adjective)
+    \item Stem the words and return the result which is a list of words
 \end{enumerate}
 
 
