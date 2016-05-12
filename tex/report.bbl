@@ -1,0 +1,13 @@
+\begin{thebibliography}{1}
+
+\bibitem{bird2006nltk}
+Steven Bird.
+\newblock Nltk: the natural language toolkit.
+\newblock pages 69--72, 2006.
+
+\bibitem{pos}
+Helmut Schmid.
+\newblock Probabilistic part-of-speech tagging using decision trees.
+\newblock 12:44--49, 1994.
+
+\end{thebibliography}
