@@ -53,22 +53,7 @@ class MainHandler(RequestHandler):
         limit = int(self.get_argument('l', 30))
 
         users = recommend(query, alpha=alpha, pr_type=prtype, limit=limit)
-        terms = get_topics(query)
-        users = {}
-        for i, term in enumerate(terms):
-            # TODO: implement the recommender algorithm
-            query = 'MATCH (u:User)-[d:DISCUSSES]->(w:Word) WHERE w.name = "{0}" RETURN u ORDER BY u.rank DESC LIMIT {1}'.format(term, 100)
-            cursor = cypher.execute(query)
-            for res in cursor:
-                user_id = res['u']['id']
-                if user_id not in users:
-                    users[user_id] = {}
-                    for key in res['u'].properties:
-                        users[user_id][key] = res['u'].properties[key]
-                    users[user_id]['terms'] = []
-                users[user_id]['terms'].append(i)
-
-        res = {'users': users.values()}
+        res = {'users': users}
         self.write(res)
 
 class ImageHandler(RequestHandler):

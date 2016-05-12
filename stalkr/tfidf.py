@@ -39,16 +39,18 @@ def recommend(query, alpha = 0.5, pr_type = 'rankb', limit=30):
     pravg = graph.cypher.execute('MATCH (u:User) RETURN {0}'.format(avgkey))[0][avgkey]
     prstdev = graph.cypher.execute('MATCH (u:User) RETURN {0}'.format(stdevkey))[0][stdevkey]
 
+    i = 0
     # For each token in query
     for token, count in query.iteritems():
         #print ">> Processing token: {0}".format(token)
         # Retrieve users who discuss this topic
         cur = graph.cypher.execute("MATCH (u:User)-[d:DISCUSSES]->(w:Word) WHERE w.name = \"{0}\" RETURN u"
-                                     ".id, u.screen_name, u.term_count, d.count, u.{1}".format(token, pr_type))
+                                     ".id, u.screen_name, u.term_count, u.friends_count, u.followers_count, d.count, u.{1}".format(token, pr_type))
         # Document frequency
         df = len(cur)
         #print ">> Found {0} users".format(df)
         # Query score
+        print collection_size, df
         wtq = count * math.log10(collection_size / df) * math.log10(collection_size / df)
         #counter = 1
         for u in cur:
@@ -57,6 +59,8 @@ def recommend(query, alpha = 0.5, pr_type = 'rankb', limit=30):
                 user = {
                     'uid': u["u.id"],
                     'screen_name': u['u.screen_name'],
+                    'friends_count': u['u.friends_count'],
+                    'followers_count': u['u.followers_count'],
                     'length': u['u.term_count'],
                     'tscore': 0.0,
                     'pscore': (u['u.{0}'.format(pr_type)] - pravg) / prstdev,
@@ -64,7 +68,7 @@ def recommend(query, alpha = 0.5, pr_type = 'rankb', limit=30):
                 }
                 users[u["u.id"]] = user
 
-            users[u["u.id"]]['tokens'].append(token)
+            users[u["u.id"]]['tokens'].append(i)
 
             #if counter % 1000 == 0:
             #    print ">> Processed {0} users".format(counter)
@@ -87,6 +91,7 @@ def recommend(query, alpha = 0.5, pr_type = 'rankb', limit=30):
                 #lengths[u_id] = length
                 users[user['uid']]['tscores'] = wtq * wtd
             counter += 1'''
+        i += 1
 
     # Normalize scores by document size (user length)
     for user in users.values():

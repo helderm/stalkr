@@ -15,10 +15,10 @@ function renderGraph(users, query) {
     for (var i = 0; i < users.length; i++) {
         var user = users[i];
         user.label = "User";
-        for (var j = 0; j < user.terms.length; j++) {
+        for (var j = 0; j < user.tokens.length; j++) {
             links.push({
                 source: i + terms.length,
-                target: user.terms[j],
+                target: user.tokens[j],
             });
         }
         nodes.push(user);
@@ -27,11 +27,11 @@ function renderGraph(users, query) {
     graph = {nodes:nodes, links:links};
     var maxUserScore = graph.nodes
         .filter(function (n) { return n.label === "User"; })
-        .map(function (u) { return Math.abs(u.rank); })
+        .map(function (u) { return Math.abs(u.score); })
         .reduce(function (x, y) { return x < y ? x : y; });
     var minUserScore = graph.nodes
         .filter(function (n) { return n.label === "User"; })
-        .map(function (u) { return Math.abs(u.rank); })
+        .map(function (u) { return Math.abs(u.score); })
         .reduce(function (x, y) { return x > y ? x : y; });
 
     // force layout setup
@@ -62,7 +62,7 @@ function renderGraph(users, query) {
     var defs = groups.append("defs");
     var patterns = defs
         .append("pattern")
-        .attr("id", function (d) { return d.id; })
+        .attr("id", function (d) { return d.uid; })
         .attr("x", "0%")
         .attr("y", "0%")
         .attr("height", "100%")
@@ -79,7 +79,7 @@ function renderGraph(users, query) {
     groups
         .append("circle")
         .attr("class", function (d) { return "node " + d.label })
-        .attr("r", function (d) { return d.label == "Topic" ? 60 : userRadius(d, minUserScore, maxUserScore, Math.abs(d.rank)); })
+        .attr("r", function (d) { return d.label == "Topic" ? 40 : userRadius(d, minUserScore, maxUserScore, Math.abs(d.score)); })
         .attr("fill", function (d){ return nodeColor(d); })
 
     groups
@@ -87,12 +87,28 @@ function renderGraph(users, query) {
         .attr("class", function (d) { return "node " + d.label })
         .attr("text-anchor", "middle")
         .attr("dominant-baseline", "central")
+        .attr("title", function (d) { return d.screen_name })
         .text(nodeText);
 
     groups.call(force.drag);
 
     groups.on("click", function () {
-        // TODO: trigger ajax function with username
+        var name = $(this).find("text").attr("title");
+        var i;
+
+        for (i = 0; i < users.length; i++) {
+            if (users[i].screen_name === name)
+                break;
+        }
+
+        console.log(users[i]);
+
+        $("#user").html(
+            '<img src=/image/' + users[i].uid + ' />'
+            + '<a href=http://twitter.com/' + name + '>' + name + '</a>'
+            + '<p>Following: ' + users[i].friends_count + '</p>'
+            + '<p>Followers: ' + users[i].followers_count + '</p>'
+        ).show();
     });
 
     // html title attribute for title node-attribute
@@ -116,14 +132,14 @@ function renderGraph(users, query) {
 };
 
 var TOPIC_RADIUS_SCALE = 5;
-var USER_RADIUS_MAX = 70;
-var USER_RADIUS_MIN = 35;
+var USER_RADIUS_MAX = 45;
+var USER_RADIUS_MIN = 10;
 
 function topicRadius(links, id) {
     var incomingLinks = 0;
     for (i in links) {
         var link = links[i];
-        if (link.target.id === id)
+        if (link.target.uid === uid)
             incomingLinks++;
     }
     return incomingLinks * TOPIC_RADIUS_SCALE;
@@ -137,14 +153,14 @@ function userRadius(node, minScore, maxScore, rank) {
 
 function nodeColor(node) {
     if (node.label === "User")
-        return "url(#" + node.id + ")";
+        return "url(#" + node.uid + ")";
     else
         return "rgb(92, 184, 92)";
 }
 
 function nodeImage(node) {
     if (node.label === "User")
-        return "/image/" + node.id;
+        return "/image/" + node.uid;
 };
 
 function nodeText(node) {
