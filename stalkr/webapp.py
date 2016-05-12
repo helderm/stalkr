@@ -53,7 +53,8 @@ class MainHandler(RequestHandler):
         limit = int(self.get_argument('l', 30))
 
         users = recommend(query, alpha=alpha, pr_type=prtype, limit=limit)
-        res = {'users': users}
+        tokens = get_topics(query)
+        res = {'users': users, 'tokens': tokens}
         self.write(res)
 
 class ImageHandler(RequestHandler):
