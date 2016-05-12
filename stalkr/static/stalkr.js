@@ -1,13 +1,12 @@
-function renderGraph(users, query) {
+function renderGraph(users, tokens, query) {
     //Creating graph object
     var nodes = [],
         links = [];
 
-    var terms = query.split(/ +/);
-    for (var i = 0; i < terms.length; i++) {
+    for (var i = 0; i < tokens.length; i++) {
         nodes.push({
             id:    i,
-            title: terms[i],
+            title: tokens[i],
             label: "Topic",
         });
     }
@@ -17,7 +16,7 @@ function renderGraph(users, query) {
         user.label = "User";
         for (var j = 0; j < user.tokens.length; j++) {
             links.push({
-                source: i + terms.length,
+                source: i + tokens.length,
                 target: user.tokens[j],
             });
         }
@@ -172,7 +171,7 @@ function nodeText(node) {
 
 var ajax = function (query) {
     $.getJSON("/users?q=" + query, function(res) {
-        renderGraph(res.users, query);
+        renderGraph(res.users, res.tokens, query);
     });
 };
 
