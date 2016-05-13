@@ -1,0 +1,59 @@
+\subsection{PageRank}
+
+One of the most well-known ranking and scoring measures is called PageRank (TODO: citation). Made famous by Google in late 90's, its main idea is to use the auxiliary information, mainly the \emph{link structure}, present in the World Wide Web as an \emph{authority measure} of the web pages contained within. Representing the web as a graph were each node is a web page and the edges the links between a page and another, it is intuitive to see that nodes with higher number of \emph{inlinks} (that is, the number of links arriving into a node) are of higher importance than the ones with no inlinks at all, just like a scientific article which is cited by several different sources, for example.
+
+One of the core mechanics of the algorithm is the propagation of ranking through links. That is, for every outlink of a web page in the graph, its ranking is distributed evenly among all of them. That covers both the cases when a web page has several different low-ranked inlinks or when it has few high-ranked ones,  they may have similar ranks since it is not the count that matters.
+
+The PageRank algorithm outputs a probability, that is, the chance that an imaginary user will arrive at that web page, starting at any random node. The user interactions with web pages can be seen as a set of \emph{random walks} where each user follows a link until they are done surfing or they are \emph{bored} of following links and jump to another random web page instead. This bored state, which is also a probability  and normally taken as $15\%$, is important as to also give a score to web pages which have no inlinks at all,  for example web pages just recently created.
+
+\subsubsection{PageRank in the Twitter graph}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=3.5in]{images/PageRank.png}
+\caption{PageRank applied to the Twitter database. Every user is a node, while every mention in tweets is an edge. The size of the node is its relative rank among others.}
+\label{fig:pagerank}
+\end{figure}
+
+Although the original PageRank algorithm was modeled with focus in the World Wide Web, its method could be applied to any problem which can be modelled as a graph. Specifically for Twitter, one could see each \emph{user} of the platform as a node and every \emph{mention} in the tweets of a user to another as a link. In the same way that web pages with high number of inlinks have a higher rank, users that are mentioned frequently will be considered more relevant for our recommendation engine, this process can be more clearly seen in Figure \ref{fig:pagerank}. Note that we actually do not analyse the content of the tweet, so tweets with positive or negative sentiment will have the same importance for ranking, one could think of it being a "any publicity is good publicity" kind of model. 
+
+The original PageRank algorithm considered following an outlink with equal probability among all the possible links. That is reasonable with the unstructured meta information available in the Web today, but is intuitive to reason that, with more information about these users, different probabilities could be applied to each one of them, depending on the task that we have at hand. For a user recommender engine, our approach used the \emph{number of followers} as a good measure of importance. That is, users with high number of followers will be jumped to with higher probability in the random walk,so their score will be naturally higher. Our engine implemented both methods for evaluation, and the results are reported in the Experiments section.
+
+\subsubsection{PageRank Monte Carlo}
+
+The standard implementation of the PageRank computation is done via a method called power iteration, which involves finding the largest eigenvector of a transition matrix $\mathcal{P}$ composed of the transition probabilities between every web page of the World Wide Web, a process which is done over several iterations until convergence. This method, although popular and still used today by Google, has its drawbacks mainly regarding the speed of convergence, several passes may be needed until the desired precision is obtained. In our approach we explored a relatively new method, which utilize \emph{Monte Carlo algorithms} to estimate the score of the nodes of the graph. As proposed by (TODO: add citation), the idea is that, if we sample the web page after a sufficient large amount of random walks, a probability distribution could be calculated with an acceptable degree of precision and with a faster convergence rate. While the power iteration method may require more than 50 iterations for an acceptable ranking to be reached, Avrachenkov et al. proposed method has ranks for the import pages after one iteration only.
+
+Of the several different algorithms proposed, our engine implements the \emph{Monte Carlo complete path},   which is detailed in the Algorithm \ref{alg:prmc}. For every user in the Twitter database, we start a random walk beginning in that user and ending when the user is bored of following mentions. We keep the track of the total steps of all random walks and how many times each user was visited. A new user is selected to be followed in the walk from all the users that he mentions, which can be done applying equal probabilities to each one of them or with increased chance for higher number of followers. If a user does not mention anyone, we consider it a \emph{sink} and jump to any other user in the database with the same method. After every user was at the beginning of the random walk for a set number of walks, we calculate the user rank simply by dividing the number of times each user was visited over all random walks by the total steps taken.   
+
+\begin{algorithm}
+\caption{PageRank Monte Carlo, complete path}\label{alg:prmc}
+\begin{algorithmic}[1]
+\Procedure{PageRank}{}
+\ForAll{walks} 
+\ForAll{user in users}
+	\State $\textit{username} \gets \textit{user['username']}$
+    \State $\textit{bored} \gets \textit{False}$
+    \While{$\neg bored$}
+		\State $\textit{totalSteps} \gets $\textit{totalSteps} + 1
+        \State $\textit{userSteps['username']} \gets \textit{userSteps['username']} + 1$
+        \State $\textit{mentions} \gets \textit{getUserMentions(username)}$
+     	\If{$mentions \in \emptyset$ }
+        	\State $\textit{username} \gets \textit{getRandomUser(users)}$         
+        \Else
+     		\State $\textit{username} \gets \textit{getRandomUser(mentions)}$
+        \EndIf
+        \State $\textit{bored} \gets \textit{isUserBored()}$ 
+    \EndWhile
+\EndFor
+\EndFor
+
+\ForAll{user in users}
+	\State $\textit{username} \gets \textit{user['username']}$
+	\State $\textit{ranks['username']} \gets userSteps['username'] \div totalSteps $
+\EndFor
+
+\State \Return {$ranks$}
+
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
