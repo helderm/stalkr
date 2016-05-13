@@ -1,9 +1,21 @@
 \section{Method}
 \label{sec:method}
 
+\subsection{Crawling Twitter}
+
 \subsection{The Neo4j database}
 
-\subsection{Crawling Twitter}
+In order to store all the information fetched from Twitter, a suitable database had to be chosen beforehand. We wanted a solution where the relationship between the different entities could be easily seen and queried, and that could effortlessly store the large amount of data that we planned to fetch. Our approach utilizes a \emph{graph database} as a solution to our storing problem, more specifically a software called \emph{Neo4j} (TODO: cite). This software allow us to faithfully represent the full structure of the Twitter database as a graph, where each different entity is a \emph{node} and the relationship between the nodes an \emph{edge}. Figure \ref{fig:schema} details the nodes and the edges of our recommender engine.
+
+The base node of the graph is the \emph{Tweet}, which is a free text short message sent through Twitter. Every tweet is posted by an \emph{User}, which is represented by the \emph{post} relationship. A tweet may \emph{mention} another user with the \emph{@} special character, and it may also \emph{tag} a topic with \emph{\#}, represented by the node \emph{Hash}. To this basic schema derived directly from Twitter, we added the node \emph{Word} which are all the parsed words in the free text of the Tweet, properly tokenized and stemmed. This node is linked to the rest of the graph through the \emph{contains} and \emph{discusses} relationships, with a property specifying the amount of times this relationship happens for every tweet and user. This new entity allows us to easily represent the user as a \emph{bag-of-words} document of every word that he discusses about in all of his tweets, thus allowing us to map the recommendation problem to the standard techniques used on information retrieval. 
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=3.5in]{images/Schema.png}
+\caption{Graph schema used for the Twitter data.}
+\label{fig:schema}
+\end{figure}
+
 
 \subsection{Parsing tweets and extracting topics}
 
