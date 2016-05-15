@@ -1,0 +1,36 @@
+\subsection{TF-IDF}
+
+Ranked user retrieval can be implemented by only using the aforementioned \emph{PageRank} algorithm but by doing so, any query would return the same top listed users. While that might be interesting in some applications, that is not the case in our context. The words in the query should also be used to filter and rank the retrieved users.
+
+\emph{TF-IDF} is a well known solution to the problem of matching (in a ranked way) documents modelled as \emph{bags-of-words}. Each document (including the input query) is represented by a vector of scores, each of which related to one of the possible terms in our dataset. The scores are calculated as follows: ${tf}_{w, d} * log_{10}(\frac{N}{{df}_{w}})$ where ${tf}_{w, d}$ is the number of times term $w$ appears in document $d$, $N$ is the total number of documents and ${df}_{w}$ is the number of documents term $w$ appears in. Then, \emph{cosine-similarity} is used to compute how close the query is to each of the documents.
+
+In our implementation, \emph{User} nodes are documents containing each of the \emph{Word} nodes they are linked to. This link contains the number of times this \emph{Word} has been discussed by this \emph{User}, that is, a ${tf}_{w, d}$ score. The final procedure can be seen in Algorithm 2.
+
+\begin{algorithm}
+\caption{TF-IDF in a Graph Database}\label{alg:tfidf}
+\begin{algorithmic}[1]
+\Procedure{TF-IDF}{}
+    \State $\textit{scores} \gets \emptyset$
+    \State $\textit{sizes} \gets \emptyset$
+    \ForAll{token in query}
+        \State $\textit{users} \gets \textit{graph.query(users that discuss 'token')}$
+        \State $\textit{df} \gets \textit{length(users)}$
+        \State $\textit{count} \gets \textit{\# of occurences of 'token' in 'query'}$
+        \State $\textit{wtq} \gets \textit{$count * log_{10}(\frac{length(documents)}{df})^2$}$
+        \ForAll{user in users}
+            \State $\textit{score} \gets \textit{wtq $*$ graph.query(\# of times 'user' discusses 'token')}$
+            \If{$user \not \in scores$}
+                \State $\textit{scores['user']} \gets \textit{score}$
+                \State $\textit{sizes['user']} \gets \textit{graph.query(\# of words discussed 'userm')}$
+            \Else
+                \State $\textit{scores['user']} \gets \textit{scores['user']} + \textit{score}$
+            \EndIf       
+        \EndFor
+    \EndFor
+    \ForAll{user in scores}
+        \State $\textit{scores['user']} \gets \textit{$\frac{scores['user']}{sizes['user']}$}$
+    \EndFor
+    \State \Return {$sort(scores)$}
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
