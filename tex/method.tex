@@ -90,3 +90,8 @@ by NLTK:
 \input{method_tfidf}
 
 \input{method_finalscore}
+
+\subsection{Word2vec - Generating Synonyms}
+The model is trained using the word2vec toolkit by Google Inc. The dataset used is the text8 file, a 97 567 kB file available from the same source as the toolkit. For the training the CBOW model was run with a word vector size of 200. The window was set to 5, hierarchical softmax was used and 1 thread was run.
+
+To extract the synonyms from the trained model, the cosine and the vocab methods were called on the loaded model. The input words and the output synonyms were also cleaned in the same way as the tweets in order to gain more consistency in relation to the database.
