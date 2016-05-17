@@ -1,3 +1,7 @@
 \section{Related work}
 \label{sec:relwork}
+In a previous work, [3],  by Subercaze et al and first published in 2015, a twitter user recommender system was also developed which treats the user’s combined tweets as the user’s representation. However, the extracted keywords of the tweets are not only nouns, but also verbs or adjectives. A co-occurrence matrix is then computed and its values are used to build a graph of the extracted words as the nodes and the probabilities of occurring together with another word as the edges. This representative graph of the user is hashed and compared to previous hashes of other users in order to find the k most similar users to follow. In contrast to this paper, an important focus of the work by Subercaze et al. is scalability, and thus they claim that their system achieves a better performance than using the tf-idf algorithm. A graphical database it not used, instead it is the hashes of the twitter users that are stored for comparison.
+
+Another previous work is the open source word2vec toolkit published by Google and heavily based on the works [5] and [4] by Mikolov et al. The toolkit provides functionality for word embedding and aims to learn meanings of words using machine learning, which is described in more detail in the Background section. This work is highly relevant to this paper since the generation of synonyms makes use of this toolkit by training a model on a chosen dataset and extracting similar words from the trained model.
+
 
