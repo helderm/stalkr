@@ -12,6 +12,7 @@ from cache import Cache
 import twitter
 from tfidf import recommend
 from topics import get_topics
+from synonyms import get_synonyms
 
 base_url = 'http://' + os.getenv('OPENSHIFT_GEAR_DNS', 'localhost:8080')
 
@@ -54,7 +55,17 @@ class MainHandler(RequestHandler):
 
         users = recommend(query, alpha=alpha, pr_type=prtype, limit=limit)
         tokens = get_topics(query)
-        res = {'users': users, 'tokens': tokens}
+
+        # Get synonyms for all tokens present in supplied query and flatten the
+        # result into a single list.
+        allsyn = sum([get_synonyms(token) for token in tokens], [])
+        # Quote all synonyms.
+        allsyn = [ "'" + s + "'" for s in allsyn]
+        # Only keep the synonyms that exists in the database.
+        cursor = self.db.cypher.execute("MATCH (w:Word) WHERE w.name IN [" + ",".join(allsyn) + "] RETURN w.name")
+        synonyms = [w["w.name"] for w in cursor]
+
+        res = {'users': users, 'tokens': tokens, 'synonyms': synonyms}
         self.write(res)
 
 class ImageHandler(RequestHandler):

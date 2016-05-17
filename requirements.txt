@@ -6,3 +6,4 @@ requests
 textblob
 tornado
 numpy
+word2vec
