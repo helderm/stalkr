@@ -1,7 +1,30 @@
 \subsection{Crawling Twitter}
 
-In order to generate a significant dataset for our queries, we had to design a Python script which acts as a \emph{crawler}, going through Twitter data and storing it. That is done through the Twitter API \cite{twitterapi}. To do that, one has to sign up as a developer in twitter and obtain client credentials so that access to the API is granted to the app. The first step of the crawler script is to use these credentials so as to obtain an access token.
+The Twitter API \cite{twitterapi} was used to fetch tweets related to a limited
+set of hashtags (Appendix \ref{appendix:hashtags}). The crawler collected 10Gb
+of data which the group decided was sufficient for the use-case.
 
-With access granted, our application is able to execute HTTP requests by means of the Requests library for python \cite{pyreq}. There are many possible requests offered by the Twitter API but we only used one such request, which queries the newest 100 tweets containing at least one of the hashtags given as input. It has the form: \emph{https://api.twitter.com/1.1/search/tweets.json?q=has\newline htags\&count=100\&result\_type="recent"\&lang="en"}, where "hashtags" is a string containing all the hashtags we decided were relevant for our USA elections context.
+% In order to generate a significant dataset for our queries, we had to design a
+% Python script which acts as a \emph{crawler}, going through Twitter data and
+% storing it. That is done through the Twitter API \cite{twitterapi}. To do that,
+% one has to sign up as a developer in Twitter and obtain client credentials so
+% that access to the API is granted to the app. The first step of the crawler
+% script is to use these credentials so as to obtain an access token.
 
-So the basic working of the script consists of an infinite loop where this request is made and the returned \emph{json} is parsed and interpreted by a set of functions which add \emph{Tweets}, \emph{Users}, \emph{Hashtags} and \emph{Words} to our database in a recursive way (i.e. if one tweet retweets a tweet that mentions a user, all this data is going to be properly processed and stored). Also, proper term extraction and stemming is done, before storing \emph{Words}.
+% With access granted, our application is able to execute HTTP requests by means
+% of the Requests library for python \cite{pyreq}. There are many possible
+% requests offered by the Twitter API but we only used one such request, which
+% queries the newest 100 tweets containing at least one of the hashtags given as
+% input. It has the form:
+% \emph{https://api.twitter.com/1.1/search/tweets.json?q=has\newline
+% htags\&count=100\&result\_type="recent"\&lang="en"}, where "hashtags" is a
+%   string containing all the hashtags we decided were relevant for our USA
+%   elections context.
+
+% So the basic working of the script consists of an infinite loop where this
+% request is made and the returned \emph{json} is parsed and interpreted by a set
+% of functions which add \emph{Tweets}, \emph{Users}, \emph{Hashtags} and
+% \emph{Words} to our database in a recursive way (i.e. if one tweet retweets a
+% tweet that mentions a user, all this data is going to be properly processed and
+% stored). Also, proper term extraction and stemming is done, before storing
+% \emph{Words}.

@@ -1,7 +1,8 @@
 PROJECT=report
 TEX=pdflatex
+LATEXFLAGS+=	-file-line-error -halt-on-error -interaction nonstopmode
 BIBTEX=bibtex
-BUILDTEX=$(TEX) $(PROJECT).tex
+BUILDTEX=$(TEX) $(LATEXFLAGS) $(PROJECT).tex
 
 all:	clean
 	$(BUILDTEX)
