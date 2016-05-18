@@ -63,21 +63,12 @@ evaluation, and the results are reported in the Experiments section.
 
 \subsubsection{PageRank Monte Carlo}
 
-The standard implementation of the PageRank computation is done via a method
-called power iteration, which involves finding the largest eigenvector of a
-transition matrix $\mathcal{P}$ composed of the transition probabilities between
-every web page of the World Wide Web, a process which is done over several
-iterations until convergence. This method, although popular and still used today
+The standard implementation of the PageRank computation is done via a method called power iteration. This method, although popular and still used today
 by Google, has its drawbacks mainly regarding the speed of convergence, several
 passes may be needed until the desired precision is obtained. In our approach we
-explored a relatively new method, which utilize \emph{Monte Carlo algorithms} to
-estimate the score of the nodes of the graph. As proposed by Avrachenkov et al.
-\cite{prmc}, the idea is that, if we sample the web page after a sufficient
-large amount of random walks, a probability distribution could be calculated
-with an acceptable degree of precision and with a faster convergence rate. While
-the power iteration method may require more than 50 iterations for an acceptable
-ranking to be reached, Avrachenkov et al. proposed method has ranks for the
-import pages after one iteration only.
+explored a relatively new method, which utilize \emph{Monte Carlo algorithms} as proposed by Avrachenkov et al.
+\cite{prmc} to
+estimate the score of the nodes of the graph.
 
 Of the several different algorithms proposed, our engine implements the
 \emph{Monte Carlo complete path}, which is detailed in the Algorithm

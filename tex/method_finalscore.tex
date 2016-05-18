@@ -3,4 +3,9 @@
 After retrieving the sets of \emph{PageRank} and \emph{TF-IDF} scores 
 for all users that discuss any query term, they are normalized to zero-average 
 and unitary variance so that they can be mixed together by means of a parameter, $\alpha$. 
-Then, the final score, for each user $u$, is: $s_{u} = \alpha * \bar{s_{p_{u}}} + (1 - \alpha) * \bar{s_{t_{u}}}$.
+Finally both terms are combined, and the resulting score can be seen in Equation \ref{eq:finalscore}, where $s_t$ is the TF-IDF score for user $u$ and query $q$ and $s_p$ the PageRank score of $u$.
+
+\begin{equation}
+s(u,q) = \alpha * s_t(u,q) + (1 - \alpha) * s_p(u)
+\label{eq:finalscore}
+\end{equation}

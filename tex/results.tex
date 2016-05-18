@@ -24,5 +24,14 @@ highly improves our Precision vs Recall curve, as can be seen in Figure \ref{fig
 
 \subsection{PageRank variant}
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=5.5in,natwidth=966,natheight=420]{images/exptopr.png}
+\caption{Precision vs Recall for PageRank using the classic algorithm (left) and the one based on the number of followers.}
+\label{fig:exptopr}
+\end{figure}
+
+In Figure \ref{fig:exptopr} we use two different methods for PageRank: the classic method where the jump between mentions of a user is done with equal probabilities, and using higher chance of jumping based on the number of followers. As we can see, the precision-at-10 of our novel method is considerably better than using the classic algorithm, and we attribute that to the nature of our problem: since our engine is recommending users to follow, users with high number of followers can be considered as good candidates. However, using this extensively may result in recommending the same top users always, which may end up penalizing too much relevant but unpopular users or the ones which are new in Twitter.
+
 \subsection{Evaluation}
 Summary of what alpha should be and why.
