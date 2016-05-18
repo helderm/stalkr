@@ -15,12 +15,13 @@ ${tf}_{w, d} * log_{10}(\frac{N}{{df}_{w}})$ where ${tf}_{w, d}$ is the number
 of times term $w$ appears in document $d$, $N$ is the total number of documents
 and ${df}_{w}$ is the number of documents term $w$ appears in. Then,
 \emph{cosine-similarity} is used to compute how close the query is to each of
-the documents.
+the documents. A link between a \emph{User} node and a \emph{Word} node maps
+directly to a ${tf}_{w,d}$ score. The final procedure can be seen in Algorithm \ref{alg:tfidf}.
 
-In our implementation, \emph{User} nodes are documents containing each of the
-\emph{Word} nodes they are linked to. This link contains the number of times
-this \emph{Word} has been discussed by this \emph{User}, that is, a ${tf}_{w,
-d}$ score. The final procedure can be seen in Algorithm \ref{alg:tfidf}.
+% In our implementation, \emph{User} nodes are documents containing each of the
+% \emph{Word} nodes they are linked to. This link contains the number of times
+% this \emph{Word} has been discussed by this \emph{User}, that is, a ${tf}_{w,
+% d}$ score. The final procedure can be seen in Algorithm \ref{alg:tfidf}.
 
 \begin{algorithm}
 \caption{TF-IDF in a Graph Database}\label{alg:tfidf}

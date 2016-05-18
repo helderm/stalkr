@@ -46,19 +46,13 @@ standard techniques used on information retrieval.
 \label{fig:schema}
 \end{figure}
 
+\subsection{Tweet text processing}
 
-\subsection{Parsing tweets and extracting topics}
-
-The goal of the project is to recommend users given topics. In order to
-recommend a user, the user needs to be associated with the topics the user talks
-about. Therefore the users tweets are parsed and the topics of the tweets are
-extracted.  The topics are extracted by parsing the freetext of the tweets and
-extracting the nouns and adjectives.  The choice of extracting nouns and
-adjectives was an empiric decision made by the group.
-
-Extracting topics from tweets is done using the Natural Language Toolkit (NLTK)
-\cite{bird2006nltk} which provides interfaces in Python for things like
-classification, tokenization and stemming.
+The topics of the tweets are extracted by parsing their freetext and
+finding nouns and adjectives. That was an empiric decision. This is done 
+using string processing alongside the Natural Language Toolkit (NLTK) 
+\cite{bird2006nltk} which provides interfaces in Python for classification, 
+tokenization and stemming.
 
 \subsubsection{Cleaning tweets}
 
@@ -68,22 +62,51 @@ starting with \textit{\#, @, \& or http} are ignored. A few other words that
 commonly occur in a tweet were also ignored as they would not contribute to the
 cause. These are \textit{don't, i'll, retweet and rt}.
 
-\subsubsection{Extracting nouns}
+\subsubsection{Extracting topics}
 
-The nouns (topics) are extracted by performing the following actions, provided
-by NLTK:
+First, letters are lowercased and the text is tokenized, then words shorter than
+three characters are removed, after which ignored symbols are removed. Finally,
+we use NLTK to Part of Speech-tag \cite{pos} each term so that we can pick only
+\texttt{NN}s (nouns) and \texttt{JJ}s (adjectives) and stem these terms, which are
+returned as a list.
 
-\begin{enumerate}
-    \item Lowercase all letters and tokenize the text into separate tokens
-    \item Remove words that are shorter than three characters (This was also a
-          decision made by the group)
-    \item For each word, remove ignored symbols and words starting with a
-	    ignored symbol
-    \item Part of Speech-tag \cite{pos} the words
-    \item Pick the words that are tagged as \texttt{NN} (noun) or \texttt{JJ}
-        (adjective)
-    \item Stem the words and return the result which is a list of words
-\end{enumerate}
+% \subsection{Parsing tweets and extracting topics}
+
+% The goal of the project is to recommend users given topics. In order to
+% recommend a user, the user needs to be associated with the topics the user talks
+% about. Therefore the users tweets are parsed and the topics of the tweets are
+% extracted.  The topics are extracted by parsing the freetext of the tweets and
+% extracting the nouns and adjectives.  The choice of extracting nouns and
+% adjectives was an empiric decision made by the group.
+
+% Extracting topics from tweets is done using the Natural Language Toolkit (NLTK)
+% \cite{bird2006nltk} which provides interfaces in Python for things like
+% classification, tokenization and stemming.
+
+% \subsubsection{Cleaning tweets}
+
+% A tweet can contain hyperlinks, hashtags, mentions and other symbols. These are
+% removed in order to properly parse the text of the tweet. Specifically, words
+% starting with \textit{\#, @, \& or http} are ignored. A few other words that
+% commonly occur in a tweet were also ignored as they would not contribute to the
+% cause. These are \textit{don't, i'll, retweet and rt}.
+
+% \subsubsection{Extracting nouns}
+
+% The nouns (topics) are extracted by performing the following actions, provided
+% by NLTK:
+
+% \begin{enumerate}
+%     \item Lowercase all letters and tokenize the text into separate tokens
+%     \item Remove words that are shorter than three characters (This was also a
+%           decision made by the group)
+%     \item For each word, remove ignored symbols and words starting with a
+% 	    ignored symbol
+%     \item Part of Speech-tag \cite{pos} the words
+%     \item Pick the words that are tagged as \texttt{NN} (noun) or \texttt{JJ}
+%         (adjective)
+%     \item Stem the words and return the result which is a list of words
+% \end{enumerate}
 
 \input{method_pr}
 
