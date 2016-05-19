@@ -33,6 +33,12 @@
         \begin{tikzfigure}
             \includegraphics[width=.6\linewidth]{images/Schema.png}
         \end{tikzfigure}
+        \begin{itemize}
+          \item Number of users: 160.562
+          \item Number of tweets: 1.021.876
+          \item Number of words: 54.576
+          \item Number of edges: 13.009.796
+        \end{itemize}
     }
 
 \end{columns}
@@ -66,11 +72,11 @@
 \begin{columns}
     \column{0.5}
     \block{Final Score}{
-        After retrieving the sets of \emph{PageRank} and \emph{TF-IDF} scores for all
+        After retrieving the sets of \emph{PageRank} and \emph{tf-idf} scores for all
         users that discuss any query term, they are normalized to zero-average and
         unitary variance so that they can be mixed together by means of a parameter,
         $\alpha$.  Finally both terms are combined, and the resulting score can be seen
-        in Equation, where $s_t$ is the TF-IDF score for user $u$
+        in Equation, where $s_t$ is the tf-idf score for user $u$
         and query $q$ and $s_p$ the PageRank score of $u$.
 
         \begin{equation}
@@ -81,7 +87,10 @@
 
     \column{0.5}
     \block{Word2vec - Generating Synonyms} {
-        TODO
+        For example: 
+        \\"president" $\Rightarrow$ \textit{presidency, presidents, chairmen, presidential, governor, chairman}
+        \\"liberal" $\Rightarrow$ \textit{conservative, liberals, liberalism, political, populist, moderate}
+
     }
 \end{columns}
 
