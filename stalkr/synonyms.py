@@ -8,9 +8,8 @@ import topics
 
 def get_synonyms(word):
     #Clean input word (lowercase, stemming, ect)
-    res = topics.get_topics(word)
-
-    cleanedWord = list(res)[0] #python3, map not subscriptable
+    # res = topics.get_topics(word)
+    cleanedWord = word
     
     #Load trained model, !-CHANGE PATH TO PATH OF MODEL-!
     model = word2vec.load("/Users/thiagolobo/Desktop/irproject/repo_new/stalkr/stalkr/vectors.bin")
@@ -25,7 +24,7 @@ def get_synonyms(word):
         for elem in synonyms:
             string = string + " " + elem
         cleanedSynonyms = topics.get_topics(string)
-        
+
         #remove duplicate of search word
         wordList = list(cleanedSynonyms)
         while cleanedWord in wordList: wordList.remove(cleanedWord)

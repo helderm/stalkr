@@ -56,9 +56,10 @@ class MainHandler(RequestHandler):
         users = recommend(query, alpha=alpha, pr_type=prtype, limit=limit)
         tokens = get_topics(query)
 
+        rawtokens = query.split(" ")
         # Get synonyms for all tokens present in supplied query and flatten the
         # result into a single list.
-        allsyn = sum([get_synonyms(token) for token in tokens], [])
+        allsyn = sum([get_synonyms(token) for token in rawtokens], [])
         # Quote all synonyms.
         allsyn = [ "'" + s + "'" for s in allsyn]
         # Only keep the synonyms that exists in the database.
