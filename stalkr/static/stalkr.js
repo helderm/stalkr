@@ -1,7 +1,16 @@
-function renderGraph(users, tokens, query) {
+function renderGraph(users, tokens, synonyms, query) {
     //Creating graph object
     var nodes = [],
         links = [];
+    var synlist = $("#synonyms").empty();
+
+    for (var i = 0; i < synonyms.length; i++) {
+        synlist.append(""
+            + "<li>"
+                + "<a href=# data-q=" + synonyms[i] + ">" + synonyms[i] + "</a>"
+            + "</li>"
+        );
+    }
 
     for (var i = 0; i < tokens.length; i++) {
         nodes.push({
@@ -171,7 +180,7 @@ function nodeText(node) {
 
 var ajax = function (query) {
     $.getJSON("/users?q=" + query, function(res) {
-        renderGraph(res.users, res.tokens, query);
+        renderGraph(res.users, res.tokens, res.synonyms, query);
     });
 };
 
@@ -179,6 +188,13 @@ $(document).ready(function () {
     $("form").submit(function (e) {
         e.preventDefault();
         var query = $(this).find("#query").val();
+        ajax(query);
+    });
+
+    $("#synonyms").on("click", "a", function (e) {
+        var query = $(this).data("q");
+        e.preventDefault();
+        $("#query").val(query);
         ajax(query);
     });
 });

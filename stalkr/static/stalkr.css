@@ -39,3 +39,17 @@ body {
 #user img {
     width: 100%;
 }
+
+#synonyms {
+    width: 60%;
+    margin: 0px auto;
+    height: 30px;
+}
+
+#synonyms li {
+    float: left;
+    margin-right: 20px;
+    margin-left: 0px;
+    list-style-type: none;
+    line-height: 30px;
+}
