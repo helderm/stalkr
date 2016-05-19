@@ -9,13 +9,13 @@
 \usepackage[utf8]{inputenc}
 \usepackage{float}
 \usepackage{subcaption}
-\usepackage{natbib}
+\usepackage[numbers]{natbib}
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
 
 \graphicspath{{pictures/}}
 
-\title{Who to follow on Twitter given topics, using TF-IDF and PageRank}
+\title{Who to follow on Twitter given topics, using tf-idf and PageRank}
 \author{\hspace*{-0.5cm}
 GROUP 7\\
 \scalebox{0.7}{
@@ -38,8 +38,6 @@ GROUP 7\\
 \maketitle
 \thispagestyle{fancy}
 
-\newpage
-
 \begin{abstract}
 \input{abstract}
 \end{abstract}
@@ -58,7 +56,8 @@ GROUP 7\\
 
 \input{conclusion}
 
-\bibliographystyle{plain}
+% \bibliographystyle{plain}
+\bibliographystyle{unsrtnat}
 \bibliography{reflist}
 
 \input{appendix}

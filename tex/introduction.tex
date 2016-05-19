@@ -1,9 +1,26 @@
 \section{Introduction}
 \label{sec:intro}
 
-With the increase of information available on the internet, information retrieval is an important topic of today. The popularity of social media, such as Facebook and Twitter, has contributed to the explosion of data and a demand for large growing databases. Recommender systems perform retrieval of information deemed relevant or of interest to a user, using relevance feedback, user ratings, user history or other information which may help determine the user’s interests. A few topics of the research on content-based recommender systems are documents \cite{digLib} \cite{contBased} and user recommendation \cite{userRec} systems. These aim to quickly extract and present relevant data to a user from large data. Therefore it is essential for enhancing the user’s experience on social media or on commercial sites.  
+With the increase of information available on the internet, information
+retrieval is an important topic of today. The popularity of social media, such
+as Facebook and Twitter, has contributed to the explosion of data and a demand
+for large growing databases. Recommender systems perform retrieval of
+information deemed relevant or of interest to a user, using relevance feedback,
+user ratings, user history or other information which may help determine the
+user’s interests \citep{contBased}\cite{digLib}\cite{userRec}.  These aim to
+quickly extract and present relevant data to a user from large data.  Therefore
+it is essential for enhancing the user’s experience on social media or on
+commercial sites.  
 
 \subsection{Objective and Specifications}
-The objective of this paper is to implement a web application of a twitter user recommender system. The application should, given a topic, recommend twitter users to follow. The specifications are as follows. The topic is represented as nouns or adjcetives, or a combination of both. The web application is only required to run locally and the data is modelled in a graph database. Users are ranked using pageranking and tf-idf scores. Lastly, potential synonyms to the words in the search query are generated and presented to the user as a suggestion.
+
+The objective of this paper is to implement a web application of a Twitter user
+recommender system. The application should, given a topic, recommend Twitter
+users to follow. The specifications are as follows. The topics are represented
+as nouns or adjectives, or a combination of both. The web application is only
+required to run locally and the data is modelled in a graph database. Users are
+ranked using PageRank and tf-idf scores. Lastly, potential synonyms to the words
+in the search query are generated and presented to the user as suggestions of
+topics to query.
 
 
