@@ -87,6 +87,8 @@
 
     \column{0.5}
     \block{Word2vec - Generating Synonyms} {
+        Synonyms of the words in the query are generated using word embedding. A neural network model is trained where each word is represented by a real vector, mapping each word to a multidimensional vector space. Through training, word which have similar contexts, and therefore similar vector representations, are mapped close together in the vector space.
+    
         For example: 
         \\"president" $\Rightarrow$ \textit{presidency, presidents, chairmen, presidential, governor, chairman}
         \\"liberal" $\Rightarrow$ \textit{conservative, liberals, liberalism, political, populist, moderate}
