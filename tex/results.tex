@@ -1,12 +1,13 @@
 \section{Experimental results}
 
-In both of our experiments, a toy query, "usa election president politics " was
+In both of our experiments, a toy query, "usa election president politics" was
 used. We first tried using only tf-idf and then a combined retrieval with
 standard PageRank, both of which were compared to combined retrieval with our
 novel PageRank variant, which considers how many followers a user has. We graded
-the top ten results of each retrieval as relevant or not and plotted aprecision
-vs recall graph for each of them.  Whether a user is relevant or not was decided
-subjectively by averaging the votes of each member of the group.
+the top ten results of each retrieval as relevant or not and plotted a precision
+vs recall graph for each of them. On voting, each member of the group had to score
+a result from 0 (non-relevant) to 3 (very relevant) and the final result was obtained
+by averaging all the votes.
 
 \subsection{tf-idf}
 
