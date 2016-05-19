@@ -9,6 +9,10 @@ all:	clean
 	$(BIBTEX) $(PROJECT)
 	$(BUILDTEX)
 	$(BUILDTEX)
+
+poster.pdf: poster.tex
+	$(TEX) $(LATEXFLAGS) poster.tex
+
 clean-all:
 	rm -f *.dvi *.log *.bak *.aux *.bbl *.blg *.idx *.ps *.eps *.pdf *.toc *.out *~
 
