@@ -53,3 +53,10 @@ body {
     list-style-type: none;
     line-height: 30px;
 }
+
+#load {
+    position: fixed;
+    top: 30px;
+    right: 10px;
+    display: none;
+}

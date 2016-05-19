@@ -197,4 +197,7 @@ $(document).ready(function () {
         $("#query").val(query);
         ajax(query);
     });
+
+    $(this).ajaxStart(function() { $("#load").show() });
+    $(this).ajaxStop(function() { $("#load").hide() });
 });
