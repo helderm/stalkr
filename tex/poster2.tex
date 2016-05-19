@@ -13,22 +13,31 @@
 
 \begin{columns}
     \column{0.5}
-    \block{Result: tf-idf vs combination (tf-idf and PageRank)} {
-        \begin{tikzfigure}
-            \includegraphics[width=1\linewidth]{images/exptfidf.png}
-        \end{tikzfigure}
+    \block{The experiments} {
+        In both of our experiments, a toy query, "usa election president politics " was
+        used. We first tried using only tf-idf and then a combined retrieval with
+        standard PageRank, both of which were compared to combined retrieval with our
+        novel PageRank variant, which considers how many followers a user has. We graded
+        the top ten results of each retrieval as relevant or not and plotted aprecision
+        vs recall graph for each of them.  Whether a user is relevant or not was decided
+        subjectively by averaging the votes of each member of the group.
     }
 
     \column{0.5}
-    \block{Result: PageRank simple vs PageRank weighted by \#followers} {
+    \block{Result: tf-idf vs combination (tf-idf and PageRank weighted by
+    \#followers)} {
         \begin{tikzfigure}
-            \includegraphics[width=1\linewidth]{images/exptopr.png}
+            \includegraphics[width=1\linewidth]{images/exptfidf.png}
         \end{tikzfigure}
+        tf-idf results in more irrelevant users (documents) because it only
+        considers words, whereas the combination with PageRank also takes into
+        account the structure of the data (user authority).
     }
+
 \end{columns}
 
 \begin{columns}
-    \column{1.0}
+    \column{0.5}
     \block{Conclusion}{
         It is feasible to create a Twitter user recommender engine using tf-idf and
         PageRank. Twitter data is suitable to be represented as a graph. Looking at the
@@ -37,12 +46,22 @@
         subjective, but for the group of this project it is deemed that the result is
         satisfactory enough for the given task.
 
-        \\Due to the limited amount of data and the fact that the data is collected using
+        Due to the limited amount of data and the fact that the data is collected using
         a limited set of correlated hashtags, it is hard to predict if the results are
         applicable to a larger more representative dataset. It would perhaps be better
         to use a larger dataset with tweets from several different topics. However, 
         considering the limited amount of time and resources, the project showed
         that the task is feasible.
+    }
+
+    \column{0.5}
+    \block{Result: PageRank simple vs PageRank weighted by \#followers} {
+        \begin{tikzfigure}
+            \includegraphics[width=1\linewidth]{images/exptopr.png}
+        \end{tikzfigure}
+        Not only can we consider the links between user nodes, but we can also
+        weigh the authority by the number of followers of each user. This yields
+        better results as shown above.
     }
 \end{columns}
 
