@@ -13,7 +13,7 @@ def get_synonyms(word):
     cleanedWord = list(res)[0] #python3, map not subscriptable
     
     #Load trained model, !-CHANGE PATH TO PATH OF MODEL-!
-    model = word2vec.load("C:/Users/Anna/Desktop/word2vec-master/word2vec-master/vectors.bin")
+    model = word2vec.load("/Users/thiagolobo/Desktop/irproject/repo_new/stalkr/stalkr/vectors.bin")
 
     try:
         #get similar words from model
@@ -32,6 +32,6 @@ def get_synonyms(word):
         
     except KeyError as e:
         #return empty list if word was not present in model
-        wordList = None
+        wordList = []
         
     return wordList

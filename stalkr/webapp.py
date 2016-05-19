@@ -108,7 +108,7 @@ class ImageHandler(RequestHandler):
 def main():
     define("host", default="127.0.0.1", help="Host IP")
     define("port", default=8080, help="Port")
-    define("neo4j_host_port", default='localhost:7474', help="Neo4j Host and Port")
+    define("neo4j_host_port", default='127.0.0.1:7474', help="Neo4j Host and Port")
     define("neo4j_user_pwd", default='neo4j:neo4j', help="Neo4j User and Password")
     tornado.options.parse_command_line()
 
