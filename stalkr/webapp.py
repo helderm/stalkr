@@ -51,7 +51,7 @@ class MainHandler(RequestHandler):
         query = self.get_argument('q')
         alpha = float(self.get_argument('a', 0.5))
         prtype = self.get_argument('t', 'rankb')
-        limit = int(self.get_argument('l', 30))
+        limit = int(self.get_argument('l', 50))
 
         users = recommend(query, alpha=alpha, pr_type=prtype, limit=limit)
         tokens = get_topics(query)

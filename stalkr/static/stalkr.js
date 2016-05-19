@@ -45,7 +45,7 @@ function renderGraph(users, tokens, synonyms, query) {
     // force layout setup
     var width = window.innerWidth*0.9, height = window.innerHeight;
     var force = d3.layout.force()
-        .charge(-1000).linkDistance(150).size([width, height]);
+        .charge(-2000).linkDistance(180).size([width, height]);
 
     d3.select("#graph").selectAll("*").remove();
     // setup svg div
@@ -139,7 +139,7 @@ function renderGraph(users, tokens, synonyms, query) {
     });
 };
 
-var TOPIC_RADIUS_SCALE = 5;
+var TOPIC_RADIUS_SCALE = 15;
 var USER_RADIUS_MAX = 45;
 var USER_RADIUS_MIN = 10;
 
